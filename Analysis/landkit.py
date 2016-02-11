@@ -13,37 +13,15 @@ import nltk
 from Tkinter import Tk
 from tkFileDialog import askopenfilename
 import csv
-
-import enchant
-
-from alignment.sequence import Sequence
+import enchant #(will not install on 64-bit python)
+from alignment.sequence import Sequence 
 from alignment.vocabulary import Vocabulary
 from alignment.sequencealigner import SimpleScoring, GlobalSequenceAligner
 import numpy as np
 import pandas as pd
 import requests
 
-def LoadDict(filename=' '):
-    """Loads in a CSV formatted table as a python dictionary. 
-    Reads the first row to extract the column names as keys.
-    If no filename is provided, a gui is opened for file selection.
-    
-    Args:   
-        filename (str): The full filename, including path if file is not in the working directory
-        
-    Returns:
-        filedict (dict): A dictionary of the file contents
-    """
-    if filename == ' ': 
-        Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-        filename = askopenfilename() # show an "Open" dialog box and return the path to the selected file
-    reader = csv.DictReader(open(filename))
-    filedict = {}
-    for row in reader:
-        for column, value in row.iteritems():
-            filedict.setdefault(column, []).append(value)
-    return filedict        
-            
+
 class SentCompare:
     """Class for the lexical and phonetic comparison of sentences
 
@@ -55,12 +33,14 @@ class SentCompare:
     Returns:
         A Pandas tabel of relevent information, if full_execute is true        
     """
-    def __init__(self,target=[],source=[],full_execute=True):
+    def __init__(self,target=[],source=[],full_execute=False):
         self.target = target
         self.source = source
         self.spelldict = nltk.corpus.words.words()
         self.phondict = nltk.corpus.cmudict.entries()
-        if full_execute:
+        self.tableFolder = r'C:/TCDTIMIT/Tables/'
+        if full_execute == True:
+            print 'go'
             self.SpellCorrect()
             self.ScoreWords()
             self.GeneratePhonemes()
@@ -85,6 +65,7 @@ class SentCompare:
             It is not designed to work with non-word lemma (i.e. "n't")
         """
         d = enchant.Dict("en_US") #Use the American Enchant dictionary
+
         sourcecorr = []
         rcnt =enumerate(self.source)
         for sent in self.source:
@@ -180,6 +161,7 @@ class SentCompare:
            source_phonemes (nested list,tuple): list of phonemes, word position in sentence and word for each source sentence
  
         """
+        missKeyFile = r'C:\TCDTIMIT\missingkeys\missingkeys.csv'
         if dictPath !=' ':
             prondict = {}
             with open(dictPath + dictFileName) as f: #open dictionary
@@ -225,20 +207,20 @@ class SentCompare:
         for w in allTargetWords:
             if not prondict.has_key(w):
                 missingkeys.append(w)
-        pd.DataFrame(missingkeys)[0].to_csv('missingkeys.csv',index = False)
-        
-        #Get the missing keys phonemes from Logios
-        url = 'http://www.speech.cs.cmu.edu/cgi-bin/tools/logios/lextool.pl'
-        r = requests.post(url, files={'wordfile': open('missingkeys.csv', 'rb')})
-        starthtml = r.text.find('DICT')+5
-        endhtml = r.text.find('-->')-2
-        inURL = r.text[starthtml:endhtml:1]
-        r = requests.get(inURL)
-        logiosIn = [x.strip().split("\t") for x in r.text.strip().split("\n")]
-        for x,y in enumerate(logiosIn):
-            logiosIn[x][0] = logiosIn[x][0].lower()
-          
-        prondict.update(logiosIn)  
+        if missingkeys:
+            
+            pd.DataFrame(missingkeys)[0].to_csv(missKeyFile,index = False)        
+            #Get the missing keys phonemes from Logios
+            url = 'http://www.speech.cs.cmu.edu/cgi-bin/tools/logios/lextool.pl'
+            r = requests.post(url, files={'wordfile': open(missKeyFile, 'rb')})
+            starthtml = r.text.find('DICT')+5
+            endhtml = r.text.find('-->')-2
+            inURL = r.text[starthtml:endhtml:1]
+            r = requests.get(inURL)
+            logiosIn = [x.strip().split("\t") for x in r.text.strip().split("\n")]
+            for x,y in enumerate(logiosIn):
+                logiosIn[x][0] = logiosIn[x][0].lower()              
+            prondict.update(logiosIn)  
 #         # Add missing words to the phoneme dictionary (from Logios)
 #        misskeys = pd.read_csv('missingkeys.dict','\t',header=None,index_col=0,names=['Phonemes'])
 #        misskeys['Lower'] = [x.lower() for x in list(misskeys.index)]
@@ -335,7 +317,7 @@ class SentCompare:
         maxWord = max(self.phonTable['WordCount'])
 
         #Load Irvine Phonotactic Dictionary
-        phod2 = pd.read_csv('IPhOD2_Words\IphOD2_Words.csv')
+        phod2 = pd.read_csv(self.tableFolder + r'IPhODv2.0_REALS\IphOD2_Words.csv')
         words = list(phod2['Word'])
         words = [x.lower() for x in words]
         phod2['Word'] = words
@@ -345,13 +327,13 @@ class SentCompare:
         #phod2 = phod2.set_index(phod2['UnTrn'])
         #Make an empty DataFrame with the right size and labels
         #tphod = phod2.loc[phod2['UnTrn'].isin(['thisinstthere'])] 
-        wordpd = pd.DataFrame(columns = ['WordCount'])
+        #wordpd = pd.DataFrame(columns = ['WordCount'])
 
 
         #Load n word frequencies
-        ngramf1 =  pd.read_table('Norvig\count_1w.txt',header=None,names=['Word','WordFreq',])
-        ngramf2 = pd.read_table('COCAFree\Ngram2.txt',header=None,names=['BigramFreq','Bi0','Bi1'])
-        ngramf3 = pd.read_table('COCAFree\Ngram3.txt',header=None,names=['TrigramFreq','Tri0','Tri1','Tri2'])
+        ngramf1 =  pd.read_table(self.tableFolder + r'Norvig\count_1w.txt',header=None,names=['Word','WordFreq',])
+        ngramf2 = pd.read_table(self.tableFolder + r'COCAFree\Ngram2.txt',header=None,names=['BigramFreq','Bi0','Bi1'])
+        ngramf3 = pd.read_table(self.tableFolder + r'COCAFree\Ngram3.txt',header=None,names=['TrigramFreq','Tri0','Tri1','Tri2'])
         min0 = min(ngramf1['WordFreq'])
         min1 = min(ngramf2['BigramFreq'])
         min2 = min(ngramf3['TrigramFreq'])

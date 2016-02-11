@@ -6,17 +6,26 @@ Created on Thu Jan 21 15:48:07 2016
 
 @author: jrkerlin
 """
-import numpy as np
-from matplotlib.pyplot import *
 import pandas as pd
+import sys
+#Add path to landkit
 
+sys.path.append(r'C:\Users\jrkerlin\Documents\GitHub\landk\Analysis')
 import landkit
 reload(landkit)
-sc = landkit.SentCompare([['hello world']],[['hello mold']],'True')
-lktable = landkit.LoadDict("test.csv")
-sc = landkit.SentCompare(lktable['SentWords'],lktable['OrigResponse'],'True')
 
-# Make pandas table with a
+#Just the spell correction and word -level scoring
+sc = landkit.SentCompare(['hello worlddsfg'],['hellot mold'],False)
+sc.SpellCorrect()
+sc.ScoreWords()
+
+
+
+lktable = pd.read_csv(r'C:\Users\jrkerlin\Dropbox\ShahinLab\DataMine\P.csv')
+sc = landkit.SentCompare(lktable['SentWords'],lktable['OrigResponse'],False)
+
+
+# Make pandas table 
 sentT = pd.DataFrame(lktable)
 
 #Join the ngram and IPHoD info and "correctness"  at the word level
