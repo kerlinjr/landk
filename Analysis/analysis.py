@@ -15,7 +15,7 @@ import landkit
 reload(landkit)
 
 #Just the spell correction and word -level scoring
-sc = landkit.SentCompare(['hello worlddsfg'],['hellot mold'],False)
+sc = landkit.SentCompare(['hello worlddsfg go','soul train with him'],['hellot mold','sol tarin'],False)
 sc.SpellCorrect()
 sc.ScoreWords()
 

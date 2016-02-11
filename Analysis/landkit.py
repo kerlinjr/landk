@@ -109,6 +109,7 @@ class SentCompare:
         source = self.source
         self.source_matchWords = []  
         hits=[]
+        wscore = np.empty(0)
         for tnum,tsent in enumerate(target):
             ssent = source[tnum]
             # Create sequences to be aligned.
@@ -150,8 +151,12 @@ class SentCompare:
             bWords[x:x+len(bSeq)] = bSeq
             bWordOut = np.array(v.elements())[bWords].tolist()
             hits.append(hitlist)
+            iwscore = sum(hitlist)*100/float(len(hitlist))
+            wscore = np.hstack([wscore,iwscore])
+            print 'hi' 
             self.source_matchWords.append(bWordOut)            
             self.hits = hits
+            self.wscore = wscore
                
     def GeneratePhonemes(self, dictPath=' ',dictFileName = ' '):   
         """Generates a list of phonemes from each sentence, and codes the word to which each phoneme belongs
