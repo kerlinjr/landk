@@ -14,20 +14,23 @@ Movie2 does require:
 """
 from __future__ import division
 from psychopy import visual, sound, core, event
-import time, os
-import sys
-import vlc
 from psychopy import logging, prefs
+import vlc
 #logging.console.setLevel(logging.DEBUG)#get messages about the sound lib as it loads
 
-# Sound Code (based on SoundStimuli demo)
+import time, os
+import sys
+
 import numpy as np
 import scipy.io.wavfile
-import time
 from numpy import mean, sqrt, square
 import math
 import pandas as pd
 import fnmatch
+#Add landkit path
+sys.path.append(r'C:\Users\jrkerlin\Documents\GitHub\landk\Analysis')
+import landkit
+reload(landkit)
 
 def rms(array):
     return sqrt(mean(square(array)))
@@ -38,7 +41,7 @@ subject = 'jktest'
 numTrials = 36
 initialSNR = 20
 
-table = pd.DataFrame(columns = {'Subject','TrialNum','Speaker','VideoFile','Babble','dBSNR','TargetSentence','SourceSentence','WordScore'}, index = np.arange(numTrials))
+table = pd.DataFrame(columns = {'Subject','TrialNum','FileName','Speaker','VideoFile','Babble','dBSNR','TargetSentence','SourceSentence','SpellCorrSource','WordScore'}, index = np.arange(numTrials))
 #Set paths 
 stimPath = r'C:/TCDTIMIT/volunteersSmall/'
 dataOutPath = r'C:/TCDTIMIT/dataOut/'
@@ -93,6 +96,10 @@ k = event.waitKeys()
 dBSNR = initialSNR
 #Start trial loop
 for trial in np.arange(numTrials):
+    table['Subject'][trial] = subject
+    table['Speaker'][trial] = speaker
+    table['TrialNum'][trial] = trial
+    
     fname = speechList[trial]
     #Shuffle and pick a random babble file with replacement
     np.random.shuffle(babbleList)
@@ -101,6 +108,13 @@ for trial in np.arange(numTrials):
     speechFile = speakerPath + fname + '.wav'
     babbleFile = babblePath + bname + '.wav'
     videoFile = speakerPath + fname + '.mp4'
+    txtFile = speakerPath + fname + '.txt'
+    table['FileName'][trial] = fname
+    table['Babble'][trial] = bname
+    table['dBSNR'][trial] = dBSNR
+    #load in text
+    words = pd.read_csv(txtFile,sep = ' ',header = None,names = ['tmp0','tmp1','Words'])['Words']
+    targetSentence = ' '.join(words)
     
     #Load in speech and babble
     info,speech = scipy.io.wavfile.read(speechFile)
@@ -213,7 +227,22 @@ for trial in np.arange(numTrials):
         win.flip()
     
     #Record final response
-    table['SourceSentence'][trial] = text.text
+    if text.text: 
+        sourceSentence = text.text
+    else:
+        sourceSentence = "-"
+    print sourceSentence
+    print targetSentence
+    table['SourceSentence'][trial] = sourceSentence
+    table['TargetSentence'][trial] = targetSentence
+    #Just the spell correction and word -level scoring
+    sc = landkit.SentCompare([targetSentence],[sourceSentence],False)
+    sc.SpellCorrect()
+    sc.ScoreWords()
+    print sc.wscore[0]
+    table['SpellCorrSource'][trial] = sc.source[0]
+    table['WordScore'][trial] = sc.wscore[0]
+    
     #Output table to file
     table.to_csv(dataOutPath+ subject + str(time.time())[:-3])
 

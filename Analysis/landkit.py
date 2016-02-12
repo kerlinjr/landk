@@ -8,11 +8,9 @@ These functions will be used to load, preprocess and analyse Land Data
 @author: jrkerlin
 
 """
+import sys
+sys.path.append(r'C:\Users\jrkerlin\Documents\GitHub\landk\Analysis')
 import nltk
-
-from Tkinter import Tk
-from tkFileDialog import askopenfilename
-import csv
 import enchant #(will not install on 64-bit python)
 from alignment.sequence import Sequence 
 from alignment.vocabulary import Vocabulary
@@ -34,6 +32,12 @@ class SentCompare:
         A Pandas tabel of relevent information, if full_execute is true        
     """
     def __init__(self,target=[],source=[],full_execute=False):
+        #Turn string inputs to list inputs for success with enumerate loops
+        if type(target) == str:
+            target = [target]
+        if type(source) == str:
+            source = [source]  
+            
         self.target = target
         self.source = source
         self.spelldict = nltk.corpus.words.words()
@@ -122,8 +126,8 @@ class SentCompare:
             bEncoded = v.encodeSequence(b)
             
             # Create a scoring and align the sequences using global aligner.
-            scoring = SimpleScoring(2, -1)
-            aligner = GlobalSequenceAligner(scoring, -2)
+            scoring = SimpleScoring(5, -1)
+            aligner = GlobalSequenceAligner(scoring, -1)
             score, encodeds = aligner.align(aEncoded, bEncoded, backtrace=True)
             encoded = encodeds[0]
             
@@ -153,7 +157,7 @@ class SentCompare:
             hits.append(hitlist)
             iwscore = sum(hitlist)*100/float(len(hitlist))
             wscore = np.hstack([wscore,iwscore])
-            print 'hi' 
+            print bWordOut 
             self.source_matchWords.append(bWordOut)            
             self.hits = hits
             self.wscore = wscore
