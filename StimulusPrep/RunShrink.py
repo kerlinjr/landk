@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Creates cliped and reduced sized mp4 files, and copies text and wavs from TIMIT to get a ~20X reduction in disk space
+Bug: Only works with 64-bit python?
 Created on Wed Feb 03 17:17:29 2016
 
 @author: jrkerlin
@@ -23,7 +24,7 @@ def ShrinkVideo(inputfile,outputfile,centerPointx,centerPointy):
         return
     #Import, crop the video, resize the video     
     videoclip = (VideoFileClip(inputfile)
-                .fx( vfx.crop, x1=centerpointx-480-1, y1=centerpointy-480-1, x2=centerpointx+480, y2=centerpointy+480))    
+                .fx( vfx.crop, x1=centerpointx-440-1, y1=centerpointy-440-1, x2=centerpointx+440, y2=centerpointy+440))    
     rs = videoclip.resize(height=720)
        
     #sndArray = videoclip.audio.to_soundarray(fps=48000)
@@ -52,7 +53,7 @@ def CopyFile(inputfile,outputfile):
 
 #Start script
 folders = os.listdir('C:/TCDTIMIT/volunteersFull/')
-
+folders = folders[11:]
 centerpoints = pd.read_csv('C:/TCDTIMIT/facecenterpoints/FaceCenterPoints.csv')
 
         

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*- 
 """
 Land Kit Modules
-
+(Currently only works with 32 bit python)
 Created on Wed Jan 20 16:25:54 2016
 
 These functions will be used to load, preprocess and analyse Land Data 

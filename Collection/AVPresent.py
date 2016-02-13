@@ -41,7 +41,7 @@ subject = 'jktest'
 numTrials = 36
 initialSNR = 20
 
-table = pd.DataFrame(columns = {'Subject','TrialNum','FileName','Speaker','VideoFile','Babble','dBSNR','TargetSentence','SourceSentence','SpellCorrSource','WordScore'}, index = np.arange(numTrials))
+table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName','VideoFile','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
 #Set paths 
 stimPath = r'C:/TCDTIMIT/volunteersSmall/'
 dataOutPath = r'C:/TCDTIMIT/dataOut/'
@@ -114,8 +114,9 @@ for trial in np.arange(numTrials):
     table['dBSNR'][trial] = dBSNR
     #load in text
     words = pd.read_csv(txtFile,sep = ' ',header = None,names = ['tmp0','tmp1','Words'])['Words']
+    print words
     targetSentence = ' '.join(words)
-    
+    print targetSentence
     #Load in speech and babble
     info,speech = scipy.io.wavfile.read(speechFile)
     info,babble = scipy.io.wavfile.read(babbleFile)
@@ -197,52 +198,73 @@ for trial in np.arange(numTrials):
     text.draw()
     win.flip()
     
-    # Loop until return is pressed
-    endTrial = False
+    from guinam import Dlg
+    myDlg = Dlg(title='AV Experiment', pos=(200,400), fontSize=20)
+    myDlg.addField("'Please type what you heard:'", width = 80,lines =2,multiLineText=True, fontSize=20)
+#    myDlg = Dlg(title="Collect sentence transcription")
+#    #myDlg.addText('Please type what you heard:')
+#    myDlg.addField('Please type what you heard:',width=80)
+
+    myDlg.show()  # show dialog and wait for OK or Cancel
+    if myDlg.OK:  # then the user pressed OK
+        textIn = myDlg.data
+        print(textIn)
+    else:
+        print('user cancelled')    
     
-    
-    while not endTrial:
-        # Wait for response...
-        response = event.waitKeys()
-        if response:
-            # If backspace, delete last character
-            if response[0] == 'backspace':
-                text.setText(text.text[:-1])
-    
-            # If return, end trial
-            elif response[0] == 'return':
-                endTrial = True
-    
-            # Insert space
-            elif response[0] == 'space':
-                text.setText(text.text + ' ')
-    
-            # Else if a letter, append to text:
-            elif response[0] in chars:
-                text.setText(text.text + response[0])
-    
-        # Display updated text
-        instruct.draw()
-        text.draw()
-        win.flip()
-    
+#    # Loop until return is pressed
+#    endTrial = False
+#    
+#    
+#    while not endTrial:
+#        # Wait for response...
+#        response = event.waitKeys()
+#        if response:
+#            # If backspace, delete last character
+#            if response[0] == 'backspace':
+#                text.setText(text.text[:-1])
+#    
+#            # If return, end trial
+#            elif response[0] == 'return':
+#                endTrial = True
+#    
+#            # Insert space
+#            elif response[0] == 'space':
+#                text.setText(text.text + ' ')
+#    
+#            # Else if a letter, append to text:
+#            elif response[0] in chars:
+#                text.setText(text.text + response[0])
+#    
+#        # Display updated text
+#        instruct.draw()
+#        text.draw()
+#        win.flip()
+#    
     #Record final response
-    if text.text: 
-        sourceSentence = text.text
+    if textIn: 
+        sourceSentence = textIn[0]
     else:
         sourceSentence = "-"
     print sourceSentence
-    print targetSentence
+    print "target " + targetSentence
     table['SourceSentence'][trial] = sourceSentence
     table['TargetSentence'][trial] = targetSentence
     #Just the spell correction and word -level scoring
     sc = landkit.SentCompare([targetSentence],[sourceSentence],False)
     sc.SpellCorrect()
     sc.ScoreWords()
-    print sc.wscore[0]
+    wscore = sc.wscore
+    print wscore
     table['SpellCorrSource'][trial] = sc.source[0]
-    table['WordScore'][trial] = sc.wscore[0]
+    table['SentenceWordScore'][trial] = wscore
     
+    if wscore > 50:
+        dBSNR += -1
+    elif wscore == 50:
+        dBSNR += 0
+    elif wscore < 50:
+        dBSNR += 1    
     #Output table to file
     table.to_csv(dataOutPath+ subject + str(time.time())[:-3])
 
