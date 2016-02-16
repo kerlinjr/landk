@@ -199,7 +199,7 @@ for trial in np.arange(numTrials):
         if shouldflip:
             # Movie has already been drawn , so just draw text stim and flip
             #if vidSwitch is not normal, only present the first frame (
-            if vidSwitch[trial] == 'Normal' or core.getTime()-movStart < 1.5/monitorSpeed:
+            if vidSwitch[trial] == 'Normal' or core.getTime()-movStart < 2/monitorSpeed:
                 text.draw()     
                 win.flip()
                 firstFrame = 0

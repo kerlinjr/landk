@@ -73,7 +73,7 @@ class SentCompare:
         sourcecorr = []
         rcnt =enumerate(self.source)
         for sent in self.source:
-            wf = ''
+            wf = ''               
             sp = sent.split() 
             rint =rcnt.next()
             for word in sp:                 
