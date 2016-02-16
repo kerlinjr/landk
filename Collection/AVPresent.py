@@ -1,8 +1,7 @@
-"""
-Demo using the new (beta) MovieStim2 to play a video file. Path of video
-needs to updated to point to a video you have. MovieStim2 does /not/ require
-avbin to be installed. But...
+"""Audio visual presentation of TCD-TIMIT sentences in noise
 
+
+PsychoPy movie presentation dependencies:
 Movie2 does require:
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -27,7 +26,7 @@ from numpy import mean, sqrt, square
 import math
 import pandas as pd
 import fnmatch
-#Add landkit path
+#Add landkit path (needed for spell checking, sentence alignement and word scoring)
 sys.path.append(r'C:\Users\jrkerlin\Documents\GitHub\landk\Analysis')
 import landkit
 reload(landkit)
@@ -40,8 +39,9 @@ def db2amp(scalar):
 subject = 'jktest'
 numTrials = 36
 initialSNR = 20
+monitorSpeed = 60
 
-table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName','VideoFile','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
+table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName','VideoFile','VideoCond','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
 #Set paths 
 stimPath = r'C:/TCDTIMIT/volunteersSmall/'
 dataOutPath = r'C:/TCDTIMIT/dataOut/'
@@ -64,8 +64,25 @@ bab0File = babblePath + r'babble0.wav'
 info,bab0 = scipy.io.wavfile.read(bab0File)
 babbleRMS = rms(bab0)
 
+#Randomize video condition
+vidSwitch = (["Normal"]*int(numTrials/2))
+vidSwitch.extend(["Static"]*int(numTrials/2)) 
+vidSwitch = np.array(vidSwitch)
+np.random.shuffle(vidSwitch)
+
+
+
 #Initiate the PsychPy window
-win = visual.Window([1024, 768])
+win = visual.Window([1920, 1080])
+
+
+#Present an example of the speaker without noise. No response taken.
+keystext = "The first sentence you will hear is an example sentence from the target speaker you will be listening for. Please listen to the example sentence. You will not need to make any response. "
+text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
+text.draw()
+win.flip()
+core.wait(0.5)
+k = event.waitKeys()
 
 
 
@@ -86,12 +103,14 @@ exampleSentence = sound.Sound(tmpSoundFile)
 exampleSentence.play()
 core.wait(exampleSentence.duration)
 
-
-keystext = "Press any key to continue"
+#Present an example of the speaker without noise. No response taken.
+keystext = "Please listen to and watch the speaker of each sentence. Be ready to type the sentence you hear. If you you are not sure about what you heard, guess. Please attempt to report as much of the sentence you heard as possible. \n \n Press the spacebar to continue."
 text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
 text.draw()
 win.flip()
+core.wait(0.5)
 k = event.waitKeys()
+
 
 dBSNR = initialSNR
 #Start trial loop
@@ -99,8 +118,11 @@ for trial in np.arange(numTrials):
     table['Subject'][trial] = subject
     table['Speaker'][trial] = speaker
     table['TrialNum'][trial] = trial
+    table['VideoCond'][trial] = vidSwitch[trial]
     
+    #Select the file to present
     fname = speechList[trial]
+    
     #Shuffle and pick a random babble file with replacement
     np.random.shuffle(babbleList)
     bname = babbleList[0]
@@ -114,9 +136,8 @@ for trial in np.arange(numTrials):
     table['dBSNR'][trial] = dBSNR
     #load in text
     words = pd.read_csv(txtFile,sep = ' ',header = None,names = ['tmp0','tmp1','Words'])['Words']
-    print words
     targetSentence = ' '.join(words)
-    print targetSentence
+
     #Load in speech and babble
     info,speech = scipy.io.wavfile.read(speechFile)
     info,babble = scipy.io.wavfile.read(babbleFile)
@@ -133,20 +154,19 @@ for trial in np.arange(numTrials):
         #if pyo is the first lib in the list of preferred libs then we could use small buffer
         #pygame sound is very bad with a small buffer though
         sound.init(48000,buffer=128)
-    print 'Using %s(with %s) for sounds' %(sound.audioLib, sound.audioDriver)
-    
+
     videopath= videoFile
     videopath = os.path.join(os.getcwd(),videopath)
     if not os.path.exists(videopath):
         raise RuntimeError("Video File could not be found:"+videopath)
         
-    
+
     
     # Create your movie stim.
     mov = visual.MovieStim2(win, videopath,
-                           size=640,
+                           size=720,
                            # pos specifies the /center/ of the movie stim location
-                           pos=[0, 100],
+                           pos=[0, 150],
                            flipVert=False,
                            flipHoriz=False,
                            loop=False,
@@ -166,27 +186,39 @@ for trial in np.arange(numTrials):
     keystext = "PRESS 'escape' to Quit.\n"
     text = visual.TextStim(win, keystext, pos=(0, -250), units = 'pix')
     # Start the movie stim by preparing it to play
+    
+    
+    #Only draw more than 1 frame if this is a video "OFF" trial    
     shouldflip = mov.play()
-    while mov.status != visual.FINISHED:
+    firstFrame = 1
+    movStart  = core.getTime()
+    while mov.status != visual.FINISHED and core.getTime()-movStart < mov.duration + .030:
         # Only flip when a new frame should be displayed. Can significantly reduce
         # CPU usage. This only makes sense if the movie is the only /dynamic/ stim
         # displayed.
         if shouldflip:
             # Movie has already been drawn , so just draw text stim and flip
-            text.draw()
-            win.flip()
+            #if vidSwitch is not normal, only present the first frame (
+            if vidSwitch[trial] == 'Normal' or core.getTime()-movStart < 1.5/monitorSpeed:
+                text.draw()     
+                win.flip()
+                firstFrame = 0
+            else:
+                time.sleep(0.001)
         else:
             # Give the OS a break if a flip is not needed
             time.sleep(0.001)
         # Drawn movie stim again. Updating of movie stim frames as necessary
         # is handled internally.
+                #Only draw more than 1 frame if this is a video On trial    
         shouldflip = mov.draw()
-    
         # Check for action keys.....
         for key in event.getKeys():
             if key in ['escape']:
                 win.close()
                 core.quit()
+
+
     
     #Start transcription sequence
     chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',"'"]
@@ -198,12 +230,12 @@ for trial in np.arange(numTrials):
     text.draw()
     win.flip()
     
+    #Prompt and collect typed response
+    textIn = [" "]
     from guinam import Dlg
     myDlg = Dlg(title='AV Experiment', pos=(200,400), fontSize=20)
     myDlg.addField("'Please type what you heard:'", width = 80,lines =2,multiLineText=True, fontSize=20)
-#    myDlg = Dlg(title="Collect sentence transcription")
-#    #myDlg.addText('Please type what you heard:')
-#    myDlg.addField('Please type what you heard:',width=80)
+
 
     myDlg.show()  # show dialog and wait for OK or Cancel
     if myDlg.OK:  # then the user pressed OK
@@ -212,40 +244,12 @@ for trial in np.arange(numTrials):
     else:
         print('user cancelled')    
     
-#    # Loop until return is pressed
-#    endTrial = False
-#    
-#    
-#    while not endTrial:
-#        # Wait for response...
-#        response = event.waitKeys()
-#        if response:
-#            # If backspace, delete last character
-#            if response[0] == 'backspace':
-#                text.setText(text.text[:-1])
-#    
-#            # If return, end trial
-#            elif response[0] == 'return':
-#                endTrial = True
-#    
-#            # Insert space
-#            elif response[0] == 'space':
-#                text.setText(text.text + ' ')
-#    
-#            # Else if a letter, append to text:
-#            elif response[0] in chars:
-#                text.setText(text.text + response[0])
-#    
-#        # Display updated text
-#        instruct.draw()
-#        text.draw()
-#        win.flip()
-#    
+
     #Record final response
     if textIn: 
         sourceSentence = textIn[0]
     else:
-        sourceSentence = "-"
+        sourceSentence = " "
     print sourceSentence
     print "target " + targetSentence
     table['SourceSentence'][trial] = sourceSentence
@@ -259,14 +263,26 @@ for trial in np.arange(numTrials):
     table['SpellCorrSource'][trial] = sc.source[0]
     table['SentenceWordScore'][trial] = wscore
     
+    #Adapt dbSNR on every trial
     if wscore > 50:
         dBSNR += -1
     elif wscore == 50:
         dBSNR += 0
     elif wscore < 50:
         dBSNR += 1    
+        
     #Output table to file
     table.to_csv(dataOutPath+ subject + str(time.time())[:-3])
+    
+
+    # Report word score to participants
+    keystext = "Trial score: " + str(int(round(wscore[0])))
+    text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
+    text.draw()
+    win.flip()
+    core.wait(0.5)
+
+
 
 print table
 core.quit()

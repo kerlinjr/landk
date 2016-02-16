@@ -89,8 +89,9 @@ class SentCompare:
                             #print(sug)
                             break
                     #If no match with target is found, replace with first suggestion    
-                    if replacefound == False:    
-                        wf = wf + ' ' + d.suggest(word)[0].lower()
+                    if replacefound == False:
+                        if d.suggest(word):
+                            wf = wf + ' ' + d.suggest(word)[0].lower() 
                         #print(word)
                         #print(d.suggest(word)[0])
                 #If spelling correct, keep the original word, lowercased        
