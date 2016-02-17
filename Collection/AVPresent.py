@@ -221,7 +221,6 @@ for trial in np.arange(numTrials):
 
     
     #Start transcription sequence
-    chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',"'"]
     instruct = visual.TextStim(win, "Please type what you heard:", pos=(0, 0), units = 'pix')
     text = visual.TextStim(win, "", pos=(0, -50), units = 'pix')
     

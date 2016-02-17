@@ -18,6 +18,7 @@ from alignment.sequencealigner import SimpleScoring, GlobalSequenceAligner
 import numpy as np
 import pandas as pd
 import requests
+import inflect
 
 
 class SentCompare:
@@ -65,18 +66,25 @@ class SentCompare:
         
         Note:
             This spell checker does not tokenize any input words 
-            other than to parse based on blank space 
+            other than to parse based on blank space, remove punctuation/non-English chars and replace digits with words 
             It is not designed to work with non-word lemma (i.e. "n't")
         """
         d = enchant.Dict("en_US") #Use the American Enchant dictionary
-
+        p = inflect.engine()
         sourcecorr = []
         rcnt =enumerate(self.source)
         for sent in self.source:
-            wf = ''               
+            wf = ''
+            #Make lowercase and strip off all characters except 26 letter alpha-numeric, "'",or " "
+            allowedChars = set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',"'"," ","-",'1','2','3','4','5','6','7','8','9','0'])               
+            sent = ''.join(ch for ch in sent.lower() if ch in allowedChars)
+            sent.replace("-", " ")
             sp = sent.split() 
             rint =rcnt.next()
-            for word in sp:                 
+            for word in sp:    
+                #Replace digits with words
+                if word.isdigit():
+                    word = p.number_to_words(word)
                 if d.check(word) == False: 
                     replacefound = False
                     for sug in d.suggest(word): 
