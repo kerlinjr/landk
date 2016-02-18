@@ -12,8 +12,9 @@ Movie2 does require:
 2. VLC application. Just install the standard VLC (32bit) for your OS. http://www.videolan.org/vlc/index.html
 """
 from __future__ import division
-from psychopy import visual, sound, core, event
+from psychopy import visual, sound, core, event, microphone
 from psychopy import logging, prefs
+
 import vlc
 #logging.console.setLevel(logging.DEBUG)#get messages about the sound lib as it loads
 
@@ -40,12 +41,13 @@ subject = 'jktest'
 numTrials = 36
 initialSNR = 20
 monitorSpeed = 60
+startTimeStr = str(time.time())[:-3]
 
 table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName','VideoFile','VideoCond','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
 #Set paths 
 stimPath = r'C:/TCDTIMIT/volunteersSmall/'
-dataOutPath = r'C:/TCDTIMIT/dataOut/'
-speaker = 's02M'
+dataOutPath = r'C:/TCDTIMIT/dataOut/' + subject + r'/' + startTimeStr + r'/'
+speaker = 's33F'
 speakerPath = stimPath + speaker + r'/straightcam/'
 #Find the root filenames of all of the si sentences for this speaker
 speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'si*.mp4')]
@@ -70,7 +72,9 @@ vidSwitch.extend(["Static"]*int(numTrials/2))
 vidSwitch = np.array(vidSwitch)
 np.random.shuffle(vidSwitch)
 
-
+# Set up microphone, must be 16000 or 8000 Hz for speech recognition
+microphone.switchOn(sampleRate=16000)
+mic = microphone.AdvAudioCapture(name='mic', saveDir=dataOutPath, stereo=False)
 
 #Initiate the PsychPy window
 win = visual.Window([1920, 1080])
@@ -132,6 +136,7 @@ for trial in np.arange(numTrials):
     videoFile = speakerPath + fname + '.mp4'
     txtFile = speakerPath + fname + '.txt'
     table['FileName'][trial] = fname
+    table['VideoFile'][trial] = videoFile
     table['Babble'][trial] = bname
     table['dBSNR'][trial] = dBSNR
     #load in text
@@ -218,7 +223,20 @@ for trial in np.arange(numTrials):
                 win.close()
                 core.quit()
 
+    #Start microphone sequence
+    instruct = visual.TextStim(win, "Please say what you heard. Press spacebar when you are finished:", pos=(0, 0), units = 'pix')
+    text = visual.TextStim(win, "", pos=(0, -50), units = 'pix')
+    
+    win.flip()
+    instruct.draw()
+    text.draw()
+    win.flip()
 
+
+    mic.record(sec=10, block=False)
+    core.wait(0.5)
+    k = event.waitKeys()
+    mic.stop() 
     
     #Start transcription sequence
     instruct = visual.TextStim(win, "Please type what you heard:", pos=(0, 0), units = 'pix')
@@ -260,22 +278,22 @@ for trial in np.arange(numTrials):
     wscore = sc.wscore
     print wscore
     table['SpellCorrSource'][trial] = sc.source[0]
-    table['SentenceWordScore'][trial] = wscore
+    table['SentenceWordScore'][trial] = wscore[0]
     
     #Adapt dbSNR on every trial
     if wscore > 50:
-        dBSNR += -1
+        dBSNR += -3
     elif wscore == 50:
         dBSNR += 0
     elif wscore < 50:
-        dBSNR += 1    
+        dBSNR += 3    
         
     #Output table to file
-    table.to_csv(dataOutPath+ subject + str(time.time())[:-3])
+    table.to_csv(dataOutPath+ subject + startTimeStr  +'.csv')
     
 
     # Report word score to participants
-    keystext = "Trial score: " + str(int(round(wscore[0])))
+    keystext = "Trial score: " + str(int(round(wscore)))
     text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
     text.draw()
     win.flip()

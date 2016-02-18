@@ -53,8 +53,8 @@ def CopyFile(inputfile,outputfile):
 
 #Start script
 folders = os.listdir('C:/TCDTIMIT/volunteersFull/')
-folders = folders[48:]
-centerpoints = pd.read_csv('C:/TCDTIMIT/facecenterpoints/FaceCenterPoints.csv')
+folders = folders
+centerpoints = pd.read_csv('C:/TCDTIMIT/facecenterpoints/FaceCenterPointsBridge.csv')
 
         
 for cnt,folder in enumerate(folders):
