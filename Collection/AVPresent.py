@@ -12,7 +12,7 @@ Movie2 does require:
 2. VLC application. Just install the standard VLC (32bit) for your OS. http://www.videolan.org/vlc/index.html
 """
 from __future__ import division
-from psychopy import visual, sound, core, event, microphone
+from psychopy import visual, sound, core, event, microphone, gui
 from psychopy import logging, prefs
 
 import vlc
@@ -36,10 +36,26 @@ def rms(array):
     return sqrt(mean(square(array)))
 def db2amp(scalar):
     return math.pow(10,scalar/20)    
+    
+textIn = [" "]
+myDlg = gui.Dlg(title='AV Experiment')
+myDlg.addField("'Subject: '")
+myDlg.addField("'initialSNR: '")
+myDlg.addField("'Speaker: '")
 
-subject = 'jktest'
+
+myDlg.show()  # show dialog and wait for OK or Cancel
+if myDlg.OK:  # then the user pressed OK
+    textIn = myDlg.data
+    print(textIn)
+else:
+    print('user cancelled')    
+
+
+
+subject = textIn[0]
 numTrials = 36
-initialSNR = 20
+initialSNR = int(textIn[1])
 monitorSpeed = 60
 startTimeStr = str(time.time())[:-3]
 
@@ -47,7 +63,7 @@ table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName
 #Set paths 
 stimPath = r'C:/TCDTIMIT/volunteersSmall/'
 dataOutPath = r'C:/TCDTIMIT/dataOut/' + subject + r'/' + startTimeStr + r'/'
-speaker = 's33F'
+speaker = textIn[2]
 speakerPath = stimPath + speaker + r'/straightcam/'
 #Find the root filenames of all of the si sentences for this speaker
 speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'si*.mp4')]
@@ -81,7 +97,7 @@ win = visual.Window([1920, 1080])
 
 
 #Present an example of the speaker without noise. No response taken.
-keystext = "The first sentence you will hear is an example sentence from the target speaker you will be listening for. Please listen to the example sentence. You will not need to make any response. "
+keystext = "The first sentence you will hear is an example sentence from the target speaker you will be listening for. Please listen to the example sentence. You will not need to make any response.Press spacebar when ready. "
 text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
 text.draw()
 win.flip()
