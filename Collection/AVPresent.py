@@ -28,7 +28,8 @@ import math
 import pandas as pd
 import fnmatch
 #Add landkit path (needed for spell checking, sentence alignement and word scoring)
-sys.path.append(r'C:\Users\jrkerlin\Documents\GitHub\landk\Analysis')
+landkPath = os.path.normpath(os.getcwd() + os.sep + os.pardir+r'\Analysis')
+sys.path.append(landkPath)
 import landkit
 reload(landkit)
 
@@ -58,6 +59,7 @@ numTrials = 36
 initialSNR = int(textIn[1])
 monitorSpeed = 60
 startTimeStr = str(time.time())[:-3]
+timeCorrection = .150
 
 table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName','VideoFile','VideoCond','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
 #Set paths 
@@ -163,6 +165,7 @@ for trial in np.arange(numTrials):
     info,speech = scipy.io.wavfile.read(speechFile)
     info,babble = scipy.io.wavfile.read(babbleFile)
     speech = speech.astype('float32')
+   # speech = speech[int(.150*48000):]
     babble = babble[range(0,len(speech))].astype('float32')
     babbleRMS = rms(babble)
     matchSpeech = babbleRMS/rms(speech)*speech
