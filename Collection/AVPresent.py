@@ -14,7 +14,14 @@ Movie2 does require:
 from __future__ import division
 from psychopy import visual, sound, core, event, microphone, gui
 from psychopy import logging, prefs
-
+''' Doesnt work yet
+from psychopy import parallel
+parallel.PParallelInpOut32
+parallel.setPortAddress(0x03F8)
+parallel.setData(255)
+core.wait(.5)
+parallel.setData(0)
+'''
 import vlc
 #logging.console.setLevel(logging.DEBUG)#get messages about the sound lib as it loads
 
@@ -54,24 +61,40 @@ else:
 
 
 
-subject = textIn[0]
-numTrials = 36
-initialSNR = int(textIn[1])
-monitorSpeed = 60
-startTimeStr = str(time.time())[:-3]
-timeCorrection = .150
+test = 1
+
+if test:
+    numTrials = 5
+    subject = 'tmp'
+    initialSNR = 40
+    monitorSpeed = 60
+    startTimeStr = str(time.time())[:-3]
+    timeCorrection = .060
+    speaker = 's60T'
+else:
+    numTrials = 36
+    subject = textIn[0]
+    initialSNR = int(textIn[1])
+    monitorSpeed = 60
+    startTimeStr = str(time.time())[:-3]
+    timeCorrection = .060
+    speaker = textIn[2]
 
 table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName','VideoFile','VideoCond','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
 #Set paths 
 stimPath = r'C:/TCDTIMIT/volunteersSmall/'
 dataOutPath = r'C:/TCDTIMIT/dataOut/' + subject + r'/' + startTimeStr + r'/'
-speaker = textIn[2]
+
 speakerPath = stimPath + speaker + r'/straightcam/'
 #Find the root filenames of all of the si sentences for this speaker
-speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'si*.mp4')]
+if test:
+    speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'Test*.mp4')]
+else:
+    speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'si*.mp4')]
 
 #Check that you have the expected number of mp4 files
 if len(speechList) != numTrials:
+    print speechList
     print 'Exiting...: Unexpected number of qualified *.mp4 files'
     core.quit()
     
@@ -95,35 +118,35 @@ microphone.switchOn(sampleRate=16000)
 mic = microphone.AdvAudioCapture(name='mic', saveDir=dataOutPath, stereo=False)
 
 #Initiate the PsychPy window
-win = visual.Window([1920, 1080])
+win = visual.Window([960, 540])
+
+if not test:
+    #Present an example of the speaker without noise. No response taken.
+    keystext = "The first sentence you will hear is an example sentence from the target speaker you will be listening for. Please listen to the example sentence. You will not need to make any response.Press spacebar when ready. "
+    text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
+    text.draw()
+    win.flip()
+    core.wait(0.5)
+    k = event.waitKeys()
 
 
-#Present an example of the speaker without noise. No response taken.
-keystext = "The first sentence you will hear is an example sentence from the target speaker you will be listening for. Please listen to the example sentence. You will not need to make any response.Press spacebar when ready. "
-text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
-text.draw()
-win.flip()
-core.wait(0.5)
-k = event.waitKeys()
 
-
-
-#Present an example of the speaker without noise. No response taken.
-keystext = "Please listen to the Speaker Example Sentence"
-text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
-text.draw()
-win.flip()
-core.wait(0.5)
-fname = 'sa1'
-speechFile = speakerPath + 'sa1.wav'
-info,speech = scipy.io.wavfile.read(speechFile)
-speech = speech.astype('float32')
-# set speech to match babble0 RMS
-matchSpeech = babbleRMS/rms(speech)*speech
-scipy.io.wavfile.write(tmpSoundFile, 48000, matchSpeech.astype('int16'))
-exampleSentence = sound.Sound(tmpSoundFile)
-exampleSentence.play()
-core.wait(exampleSentence.duration)
+    #Present an example of the speaker without noise. No response taken.
+    keystext = "Please listen to the Speaker Example Sentence"
+    text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
+    text.draw()
+    win.flip()
+    core.wait(0.5)
+    fname = 'sa1'
+    speechFile = speakerPath + 'sa1.wav'
+    info,speech = scipy.io.wavfile.read(speechFile)
+    speech = speech.astype('float32')
+    # set speech to match babble0 RMS
+    matchSpeech = babbleRMS/rms(speech)*speech
+    scipy.io.wavfile.write(tmpSoundFile, 48000, matchSpeech.astype('int16'))
+    exampleSentence = sound.Sound(tmpSoundFile)
+    exampleSentence.play()
+    core.wait(exampleSentence.duration)
 
 #Present an example of the speaker without noise. No response taken.
 keystext = "Please listen to and watch the speaker of each sentence. Be ready to type the sentence you hear. If you you are not sure about what you heard, guess. Please attempt to report as much of the sentence you heard as possible. \n \n Press the spacebar to continue."
@@ -152,28 +175,34 @@ for trial in np.arange(numTrials):
     speechFile = speakerPath + fname + '.wav'
     babbleFile = babblePath + bname + '.wav'
     videoFile = speakerPath + fname + '.mp4'
-    txtFile = speakerPath + fname + '.txt'
+
     table['FileName'][trial] = fname
     table['VideoFile'][trial] = videoFile
     table['Babble'][trial] = bname
     table['dBSNR'][trial] = dBSNR
-    #load in text
-    words = pd.read_csv(txtFile,sep = ' ',header = None,names = ['tmp0','tmp1','Words'])['Words']
-    targetSentence = ' '.join(words)
-
-    #Load in speech and babble
-    info,speech = scipy.io.wavfile.read(speechFile)
-    info,babble = scipy.io.wavfile.read(babbleFile)
-    speech = speech.astype('float32')
-   # speech = speech[int(.150*48000):]
-    babble = babble[range(0,len(speech))].astype('float32')
-    babbleRMS = rms(babble)
-    matchSpeech = babbleRMS/rms(speech)*speech
-    adjustedBabble = babble*db2amp(-dBSNR)
-    audioOut = matchSpeech + adjustedBabble
-    #Export mixed speech and babble to a temporary wav file
-    scipy.io.wavfile.write(tmpSoundFile, 48000, audioOut.astype('int16'))        
     
+    #load in text
+    if not test:
+        txtFile = speakerPath + fname + '.txt'
+        words = pd.read_csv(txtFile,sep = ' ',header = None,names = ['tmp0','tmp1','Words'])['Words']
+        targetSentence = ' '.join(words)
+        #Load in speech and babble
+        info,speech = scipy.io.wavfile.read(speechFile)
+        info,babble = scipy.io.wavfile.read(babbleFile)
+        speech = speech.astype('float32')
+        speech = speech[int(timeCorrection*48000):]
+        babble = babble[range(0,len(speech))].astype('float32')
+        babbleRMS = rms(babble)
+        matchSpeech = babbleRMS/rms(speech)*speech
+        adjustedBabble = babble*db2amp(-dBSNR)
+        audioOut = matchSpeech + adjustedBabble
+        #Export mixed speech and babble to a temporary wav file
+        scipy.io.wavfile.write(tmpSoundFile, 48000, audioOut.astype('int16'))        
+    else:
+        info,speech = scipy.io.wavfile.read(speakerPath + 'TestVideo.wav')
+        speech = speech[int(timeCorrection*48000):]
+        scipy.io.wavfile.write(tmpSoundFile, 48000, speech.astype('int16'))
+
     if prefs.general['audioLib'][0] == 'pyo':
         #if pyo is the first lib in the list of preferred libs then we could use small buffer
         #pygame sound is very bad with a small buffer though
@@ -197,6 +226,7 @@ for trial in np.arange(numTrials):
                            noAudio = False)
                            
     #Replace movie audio with desired speech audio
+
     try:
         mov._audio_stream = mov._vlc_instance.media_new(tmpSoundFile)
     except NameError:
@@ -206,7 +236,7 @@ for trial in np.arange(numTrials):
     mov._audio_stream_event_manager = mov._audio_stream_player.event_manager()
     #mov._audio_stream_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, mov._audio_time_callback, mov._audio_stream_player)
     #mov._audio_stream_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, mov._audio_end_callback)
-    
+
     keystext = "PRESS 'escape' to Quit.\n"
     text = visual.TextStim(win, keystext, pos=(0, -250), units = 'pix')
     # Start the movie stim by preparing it to play
@@ -241,82 +271,82 @@ for trial in np.arange(numTrials):
             if key in ['escape']:
                 win.close()
                 core.quit()
-
-    #Start microphone sequence
-    instruct = visual.TextStim(win, "Please say what you heard. Press spacebar when you are finished:", pos=(0, 0), units = 'pix')
-    text = visual.TextStim(win, "", pos=(0, -50), units = 'pix')
-    
-    win.flip()
-    instruct.draw()
-    text.draw()
-    win.flip()
-
-
-    mic.record(sec=10, block=False)
-    core.wait(0.5)
-    k = event.waitKeys()
-    mic.stop() 
-    
-    #Start transcription sequence
-    instruct = visual.TextStim(win, "Please type what you heard:", pos=(0, 0), units = 'pix')
-    text = visual.TextStim(win, "", pos=(0, -50), units = 'pix')
-    
-    win.flip()
-    instruct.draw()
-    text.draw()
-    win.flip()
-    
-    #Prompt and collect typed response
-    textIn = [" "]
-    from guinam import Dlg
-    myDlg = Dlg(title='AV Experiment', pos=(200,400), fontSize=20)
-    myDlg.addField("'Please type what you heard:'", width = 80,lines =2,multiLineText=True, fontSize=20)
-
-
-    myDlg.show()  # show dialog and wait for OK or Cancel
-    if myDlg.OK:  # then the user pressed OK
-        textIn = myDlg.data
-        print(textIn)
-    else:
-        print('user cancelled')    
-    
-
-    #Record final response
-    if textIn: 
-        sourceSentence = textIn[0]
-    else:
-        sourceSentence = " "
-    print sourceSentence
-    print "target " + targetSentence
-    table['SourceSentence'][trial] = sourceSentence
-    table['TargetSentence'][trial] = targetSentence
-    #Just the spell correction and word -level scoring
-    sc = landkit.SentCompare([targetSentence],[sourceSentence],False)
-    sc.SpellCorrect()
-    sc.ScoreWords()
-    wscore = sc.wscore
-    print wscore
-    table['SpellCorrSource'][trial] = sc.source[0]
-    table['SentenceWordScore'][trial] = wscore[0]
-    
-    #Adapt dbSNR on every trial
-    if wscore > 50:
-        dBSNR += -3
-    elif wscore == 50:
-        dBSNR += 0
-    elif wscore < 50:
-        dBSNR += 3    
+    if not test:
+        #Start microphone sequence
+        instruct = visual.TextStim(win, "Please say what you heard. Press spacebar when you are finished:", pos=(0, 0), units = 'pix')
+        text = visual.TextStim(win, "", pos=(0, -50), units = 'pix')
         
-    #Output table to file
-    table.to_csv(dataOutPath+ subject + startTimeStr  +'.csv')
-    
+        win.flip()
+        instruct.draw()
+        text.draw()
+        win.flip()
 
-    # Report word score to participants
-    keystext = "Trial score: " + str(int(round(wscore)))
-    text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
-    text.draw()
-    win.flip()
-    core.wait(0.5)
+
+        mic.record(sec=10, block=False)
+        core.wait(0.5)
+        k = event.waitKeys()
+        mic.stop() 
+        
+        #Start transcription sequence
+        instruct = visual.TextStim(win, "Please type what you heard:", pos=(0, 0), units = 'pix')
+        text = visual.TextStim(win, "", pos=(0, -50), units = 'pix')
+        
+        win.flip()
+        instruct.draw()
+        text.draw()
+        win.flip()
+        
+        #Prompt and collect typed response
+        textIn = [" "]
+        from guinam import Dlg
+        myDlg = Dlg(title='AV Experiment', pos=(200,400), fontSize=20)
+        myDlg.addField("'Please type what you heard:'", width = 80,lines =2,multiLineText=True, fontSize=20)
+
+
+        myDlg.show()  # show dialog and wait for OK or Cancel
+        if myDlg.OK:  # then the user pressed OK
+            textIn = myDlg.data
+            print(textIn)
+        else:
+            print('user cancelled')    
+        
+
+        #Record final response
+        if textIn: 
+            sourceSentence = textIn[0]
+        else:
+            sourceSentence = " "
+        print sourceSentence
+        print "target " + targetSentence
+        table['SourceSentence'][trial] = sourceSentence
+        table['TargetSentence'][trial] = targetSentence
+        #Just the spell correction and word -level scoring
+        sc = landkit.SentCompare([targetSentence],[sourceSentence],False)
+        sc.SpellCorrect()
+        sc.ScoreWords()
+        wscore = sc.wscore
+        print wscore
+        table['SpellCorrSource'][trial] = sc.source[0]
+        table['SentenceWordScore'][trial] = wscore[0]
+        
+        #Adapt dbSNR on every trial
+        if wscore > 50:
+            dBSNR += -3
+        elif wscore == 50:
+            dBSNR += 0
+        elif wscore < 50:
+            dBSNR += 3    
+            
+        #Output table to file
+        table.to_csv(dataOutPath+ subject + startTimeStr  +'.csv')
+        
+
+        # Report word score to participants
+        keystext = "Trial score: " + str(int(round(wscore)))
+        text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
+        text.draw()
+        win.flip()
+        core.wait(0.5)
 
 
 
