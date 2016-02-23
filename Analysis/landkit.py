@@ -19,6 +19,42 @@ import numpy as np
 import pandas as pd
 import requests
 import inflect
+import time
+
+def norvig(text):
+    
+    import re, collections
+    
+    def words(text): return re.findall('[a-z]+', text.lower()) 
+
+    def train(features):
+        model = collections.defaultdict(lambda: 1)
+        for f in features:
+            model[f] += 1
+        return model
+
+    NWORDS = train(words(file(r'C:\TCDTIMIT\norvig_big.txt').read()))
+
+    alphabet = 'abcdefghijklmnopqrstuvwxyz'
+
+    def edits1(word):
+       splits     = [(word[:i], word[i:]) for i in range(len(word) + 1)]
+       deletes    = [a + b[1:] for a, b in splits if b]
+       transposes = [a + b[1] + b[0] + b[2:] for a, b in splits if len(b)>1]
+       replaces   = [a + c + b[1:] for a, b in splits for c in alphabet if b]
+       inserts    = [a + c + b     for a, b in splits for c in alphabet]
+       return set(deletes + transposes + replaces + inserts)
+
+    def known_edits2(word):
+        return set(e2 for e1 in edits1(word) for e2 in edits1(e1) if e2 in NWORDS)
+
+    def known(words): return set(w for w in words if w in NWORDS)
+
+    def correct(word):
+        candidates = known([word]) or known(edits1(word)) or known_edits2(word) or [word]
+        #return max(candidates, key=NWORDS.get)
+        return list(candidates)
+    return correct(text)
 
 
 class SentCompare:
@@ -52,6 +88,64 @@ class SentCompare:
             self.ScorePhonemes()
             self.GeneratePhonemeTable()
             self.SentenceAnalysis()
+            
+    def SpellCorrectNorvig(self):
+        """Corrects the spelling of the source sentences using
+        Norvig spell checking.
+        
+        If a spell checked suggestion can be found in the target text, that suggestion is used.
+        If not, the first suggestion is used.
+        All words are forced to lowercase.
+           
+        Attributes:
+            source (list): The spell corrected version of the source sentence list
+        
+        Note:
+            This spell checker does not tokenize any input words 
+            other than to parse based on blank space, remove punctuation/non-English chars and replace digits with words 
+            It is not designed to work with non-word lemma (i.e. "n't")
+        """ 
+#       d = enchant.Dict("en_US") #Use the American Enchant dictionary        p = inflect.engine()
+        sourcecorr = []
+        rcnt =enumerate(self.source)
+        for sent in self.source:
+            wf = ''
+            #Make lowercase and strip off all characters except 26 letter alpha-numeric, "'",or " "
+            allowedChars = set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',"'"," ","-",'1','2','3','4','5','6','7','8','9','0'])               
+            sent = ''.join(ch for ch in sent.lower() if ch in allowedChars)
+            sent.replace("-", " ")
+            sp = sent.split() 
+            rint =rcnt.next()
+            for word in sp:    
+                #Replace digits with words
+                if word.isdigit():
+                    word = p.number_to_words(word)
+                if norvig(word)[0] != word: 
+                    replacefound = False
+                    for sug in norvig(word): 
+                        #loop through suggestions to find word match with target sentence
+                        #replace and quit looking if target match is found
+                        if sug in self.target[rint[0]].split():  
+                            wf = wf + ' ' + sug.lower()
+                            replacefound = True
+                            #print(word)
+                            #print(sug)
+                            break
+                    #If no match with target is found, replace with first suggestion    
+                    if replacefound == False:
+                        if norvig(word):
+                            wf = wf + ' ' + norvig(word)[0].lower()
+                        else:
+                            wf = wf + ' ' + word.lower()
+                        #print(word)
+                        #print(d.suggest(word)[0])
+                #If spelling correct, keep the original word, lowercased        
+                else:
+                    wf = wf + ' ' + word.lower()
+            sourcecorr.append(wf[1:])
+        self.source = sourcecorr
+        #Needs a break after spell checking?
+        time.sleep(0.2)       
  
     def SpellCorrect(self):
         """Corrects the spelling of the source sentences using
@@ -69,45 +163,47 @@ class SentCompare:
             other than to parse based on blank space, remove punctuation/non-English chars and replace digits with words 
             It is not designed to work with non-word lemma (i.e. "n't")
         """
-        d = enchant.Dict("en_US") #Use the American Enchant dictionary
-        del d
-#        p = inflect.engine()
-#        sourcecorr = []
-#        rcnt =enumerate(self.source)
-#        for sent in self.source:
-#            wf = ''
-#            #Make lowercase and strip off all characters except 26 letter alpha-numeric, "'",or " "
-#            allowedChars = set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',"'"," ","-",'1','2','3','4','5','6','7','8','9','0'])               
-#            sent = ''.join(ch for ch in sent.lower() if ch in allowedChars)
-#            sent.replace("-", " ")
-#            sp = sent.split() 
-#            rint =rcnt.next()
-#            for word in sp:    
-#                #Replace digits with words
-#                if word.isdigit():
-#                    word = p.number_to_words(word)
-#                if d.check(word) == False: 
-#                    replacefound = False
-#                    for sug in d.suggest(word): 
-#                        #loop through suggestions to find word match with target sentence
-#                        #replace and quit looking if target match is found
-#                        if sug in self.target[rint[0]].split():  
-#                            wf = wf + ' ' + sug.lower()
-#                            replacefound = True
-#                            #print(word)
-#                            #print(sug)
-#                            break
-#                    #If no match with target is found, replace with first suggestion    
-#                    if replacefound == False:
-#                        if d.suggest(word):
-#                            wf = wf + ' ' + d.suggest(word)[0].lower() 
-#                        #print(word)
-#                        #print(d.suggest(word)[0])
-#                #If spelling correct, keep the original word, lowercased        
-#                else:
-#                    wf = wf + ' ' + word.lower()
-#            sourcecorr.append(wf[1:])
-#        self.source = sourcecorr
+        d = enchant.Dict("en_US") #Use the American Enchant dictionary        p = inflect.engine()
+        sourcecorr = []
+        rcnt =enumerate(self.source)
+        for sent in self.source:
+            wf = ''
+            #Make lowercase and strip off all characters except 26 letter alpha-numeric, "'",or " "
+            allowedChars = set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',"'"," ","-",'1','2','3','4','5','6','7','8','9','0'])               
+            sent = ''.join(ch for ch in sent.lower() if ch in allowedChars)
+            sent.replace("-", " ")
+            sp = sent.split() 
+            rint =rcnt.next()
+            for word in sp:    
+                #Replace digits with words
+                if word.isdigit():
+                    word = p.number_to_words(word)
+                if d.check(word) == False: 
+                    replacefound = False
+                    for sug in d.suggest(word): 
+                        #loop through suggestions to find word match with target sentence
+                        #replace and quit looking if target match is found
+                        if sug in self.target[rint[0]].split():  
+                            wf = wf + ' ' + sug.lower()
+                            replacefound = True
+                            #print(word)
+                            #print(sug)
+                            break
+                    #If no match with target is found, replace with first suggestion    
+                    if replacefound == False:
+                        if d.suggest(word):
+                            wf = wf + ' ' + d.suggest(word)[0].lower()
+                        else:
+                            wf = wf + ' ' + word.lower()
+                        #print(word)
+                        #print(d.suggest(word)[0])
+                #If spelling correct, keep the original word, lowercased        
+                else:
+                    wf = wf + ' ' + word.lower()
+            sourcecorr.append(wf[1:])
+        self.source = sourcecorr
+        #Needs a break after spell checking?
+        time.sleep(0.2)
             
     def ScoreWords(self):
         """Aligns the words of the source sentence to match the target sentence
