@@ -69,7 +69,7 @@ else:
 
 
 
-test = 1
+test = 0
 
 if test:
     numTrials = 6
@@ -127,7 +127,7 @@ mic = microphone.AdvAudioCapture(name='mic', saveDir=dataOutPath, stereo=False)
 
 #Initiate the PsychPy window
 win = visual.Window([1000, 1000])
-sound.init(48000,buffer=500)
+#sound.init(48000,buffer=500)
 
 if not test:
     #Present an example of the speaker without noise. No response taken.
