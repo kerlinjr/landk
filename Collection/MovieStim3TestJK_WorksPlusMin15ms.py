@@ -1,3 +1,4 @@
+# This results in a "on-time" AV presentation on our setup +- about 15 ms (missed flip?)
 from psychopy import prefs
 #pyo.pa_get_input_devices()
 prefs.general['audioLib'] = ['pygame']

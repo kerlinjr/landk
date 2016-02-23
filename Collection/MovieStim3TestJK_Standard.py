@@ -1,13 +1,14 @@
+
 from psychopy import prefs
 #pyo.pa_get_input_devices()
-prefs.general['audioLib'] = ['pygame']
-prefs.general['audioDriver'] = ['SPDIF (RME HDSP 9652)']
+#prefs.general['audioLib'] = ['pygame']
+#prefs.general['audioDriver'] = ['SPDIF (RME HDSP 9652)']
 
 from psychopy import visual, core, event,sound,logging
 logging.console.setLevel(logging.DEBUG)#get messages about the sound lib as it loads
 
 win = visual.Window([1000,1000])
-sound.init(48000,buffer=500)
+#sound.init(48000,buffer=500)
 
 globalClock = core.Clock()
 

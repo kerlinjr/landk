@@ -70,43 +70,44 @@ class SentCompare:
             It is not designed to work with non-word lemma (i.e. "n't")
         """
         d = enchant.Dict("en_US") #Use the American Enchant dictionary
-        p = inflect.engine()
-        sourcecorr = []
-        rcnt =enumerate(self.source)
-        for sent in self.source:
-            wf = ''
-            #Make lowercase and strip off all characters except 26 letter alpha-numeric, "'",or " "
-            allowedChars = set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',"'"," ","-",'1','2','3','4','5','6','7','8','9','0'])               
-            sent = ''.join(ch for ch in sent.lower() if ch in allowedChars)
-            sent.replace("-", " ")
-            sp = sent.split() 
-            rint =rcnt.next()
-            for word in sp:    
-                #Replace digits with words
-                if word.isdigit():
-                    word = p.number_to_words(word)
-                if d.check(word) == False: 
-                    replacefound = False
-                    for sug in d.suggest(word): 
-                        #loop through suggestions to find word match with target sentence
-                        #replace and quit looking if target match is found
-                        if sug in self.target[rint[0]].split():  
-                            wf = wf + ' ' + sug.lower()
-                            replacefound = True
-                            #print(word)
-                            #print(sug)
-                            break
-                    #If no match with target is found, replace with first suggestion    
-                    if replacefound == False:
-                        if d.suggest(word):
-                            wf = wf + ' ' + d.suggest(word)[0].lower() 
-                        #print(word)
-                        #print(d.suggest(word)[0])
-                #If spelling correct, keep the original word, lowercased        
-                else:
-                    wf = wf + ' ' + word.lower()
-            sourcecorr.append(wf[1:])
-        self.source = sourcecorr
+        del d
+#        p = inflect.engine()
+#        sourcecorr = []
+#        rcnt =enumerate(self.source)
+#        for sent in self.source:
+#            wf = ''
+#            #Make lowercase and strip off all characters except 26 letter alpha-numeric, "'",or " "
+#            allowedChars = set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',"'"," ","-",'1','2','3','4','5','6','7','8','9','0'])               
+#            sent = ''.join(ch for ch in sent.lower() if ch in allowedChars)
+#            sent.replace("-", " ")
+#            sp = sent.split() 
+#            rint =rcnt.next()
+#            for word in sp:    
+#                #Replace digits with words
+#                if word.isdigit():
+#                    word = p.number_to_words(word)
+#                if d.check(word) == False: 
+#                    replacefound = False
+#                    for sug in d.suggest(word): 
+#                        #loop through suggestions to find word match with target sentence
+#                        #replace and quit looking if target match is found
+#                        if sug in self.target[rint[0]].split():  
+#                            wf = wf + ' ' + sug.lower()
+#                            replacefound = True
+#                            #print(word)
+#                            #print(sug)
+#                            break
+#                    #If no match with target is found, replace with first suggestion    
+#                    if replacefound == False:
+#                        if d.suggest(word):
+#                            wf = wf + ' ' + d.suggest(word)[0].lower() 
+#                        #print(word)
+#                        #print(d.suggest(word)[0])
+#                #If spelling correct, keep the original word, lowercased        
+#                else:
+#                    wf = wf + ' ' + word.lower()
+#            sourcecorr.append(wf[1:])
+#        self.source = sourcecorr
             
     def ScoreWords(self):
         """Aligns the words of the source sentence to match the target sentence
