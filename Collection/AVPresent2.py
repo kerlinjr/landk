@@ -15,7 +15,7 @@ Movie2 does require:
 from __future__ import division
 from psychopy import prefs
 #pyo.pa_get_input_devices()
-#prefs.general['audioLib'] = ['pyo']
+#prefs.general['audioLib'] = ['pygame']
 #prefs.general['audioDriver'] = ['SPDIF (RME HDSP 9652)']
 
 
@@ -29,7 +29,7 @@ parallel.setData(255)
 core.wait(.5)
 parallel.setData(0)
 '''
-import vlc
+
 logging.console.setLevel(logging.DEBUG)#get messages about the sound lib as it loads
 
 import time, os
@@ -69,7 +69,7 @@ else:
 
 
 
-test = 0 
+test = 1
 
 if test:
     numTrials = 6
@@ -96,7 +96,7 @@ dataOutPath = r'C:/TCDTIMIT/dataOut/' + subject + r'/' + startTimeStr + r'/'
 speakerPath = stimPath + speaker + r'/straightcam/'
 #Find the root filenames of all of the si sentences for this speaker
 if test:
-    speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'si*.mp4')]
+    speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'Test*.mp4')]
 else:
     speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'si*.mp4')]
 
@@ -127,7 +127,7 @@ mic = microphone.AdvAudioCapture(name='mic', saveDir=dataOutPath, stereo=False)
 
 #Initiate the PsychPy window
 win = visual.Window([1000, 1000])
-#sound.init(48000,buffer=500)
+sound.init(48000,buffer=500)
 
 if not test:
     #Present an example of the speaker without noise. No response taken.
@@ -205,13 +205,11 @@ for trial in np.arange(numTrials):
         matchSpeech = babbleRMS/rms(speech)*speech
         adjustedBabble = babble*db2amp(-dBSNR)
         audioOut = matchSpeech + adjustedBabble
-        soundDur =  audioOut.size/float(48000)
         #Export mixed speech and babble to a temporary wav file
         scipy.io.wavfile.write(tmpSoundFile, 48000, audioOut.astype('int16'))        
     else:
         info,speech = scipy.io.wavfile.read(speakerPath + 'TestVideo.wav')
         speech = speech[int(timeCorrection*48000):]
-        soundDur =  speech.size/float(48000)
         scipy.io.wavfile.write(tmpSoundFile, 48000, speech.astype('int16'))
 
     videopath= videoFile
@@ -222,30 +220,19 @@ for trial in np.arange(numTrials):
 
     
     # Create your movie stim.
-    mov = visual.MovieStim2(win, videopath,
+    mov = visual.MovieStim3(win, videopath,
                            size=720,
                            # pos specifies the /center/ of the movie stim location
                            pos=[0, 150],
                            flipVert=False,
                            flipHoriz=False,
                            loop=False,
-                           noAudio = False)
-#    audioSound = sound.Sound(tmpSoundFile,sampleRate=48000)
-#    soundDur = audioSound.getDuration()
-#    print soundDur
+                           noAudio = True)
+    audioSound = sound.Sound(tmpSoundFile,sampleRate=48000)
+    soundDur = audioSound.getDuration()
+    print soundDur
     keystext = "PRESS 'escape' to Quit.\n"
     text = visual.TextStim(win, keystext, pos=(0, -250), units = 'pix')
-    
-        #Replace movie audio with desired speech audio
-    try:
-        mov._audio_stream = mov._vlc_instance.media_new(tmpSoundFile)
-    except NameError:
-        raise ImportError('NameError: %s vs LibVLC %s' % (vlc.__version__,vlc.libvlc_get_version()))
-    mov._audio_stream_player = mov._vlc_instance.media_player_new()
-    mov._audio_stream_player.set_media(mov._audio_stream)
-    mov._audio_stream_event_manager = mov._audio_stream_player.event_manager()
-    #mov._audio_stream_event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, mov._audio_time_callback, mov._audio_stream_player)
-    #mov._audio_stream_event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, mov._audio_end_callback)
     
     
     #Only draw more than 1 frame if this is a video "OFF" trial    
@@ -257,7 +244,7 @@ for trial in np.arange(numTrials):
             mov.draw()
             text.draw()     
             win.flip()
-#            audioSound.play()
+            audioSound.play()
             movStart  = core.getTime()
             firstFrame = 0
         else:
