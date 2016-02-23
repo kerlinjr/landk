@@ -13,10 +13,11 @@ Movie2 does require:
 """
 
 from __future__ import division
+
 from psychopy import prefs
 #pyo.pa_get_input_devices()
 #prefs.general['audioLib'] = ['pygame']
-#prefs.general['audioDriver'] = ['SPDIF (RME HDSP 9652)']
+#prefs.general['audioDriver'] = ['SPDIF (RME HDSP 9652)'] #kills none spdif microphone
 
 
 from psychopy import visual, sound, core, event, microphone, gui
@@ -47,6 +48,7 @@ landkPath = os.path.normpath(os.getcwd() + os.sep + os.pardir+r'\Analysis')
 sys.path.append(landkPath)
 import landkit
 reload(landkit)
+import enchant
 
 def rms(array):
     return sqrt(mean(square(array)))
@@ -167,8 +169,10 @@ k = event.waitKeys()
 
 
 dBSNR = initialSNR
+
 #Start trial loop
 for trial in np.arange(numTrials):
+    reload(enchant)
     table['Subject'][trial] = subject
     table['Speaker'][trial] = speaker
     table['TrialNum'][trial] = trial
@@ -296,7 +300,6 @@ for trial in np.arange(numTrials):
             print(textIn)
         else:
             print('user cancelled')    
-        
 
         #Record final response
         if textIn: 
@@ -312,7 +315,7 @@ for trial in np.arange(numTrials):
         #Just the spell correction and word -level scoring
         sc = landkit.SentCompare([targetSentence],[sourceSentence],False)
         
-        #sc.SpellCorrect() enchant crashes this script at testing computer for unknown reason!!! 
+        sc.SpellCorrectNorvig() #enchant crashes this script at testing computer for unknown reason!!! 
         
         sc.ScoreWords()
         
@@ -320,7 +323,7 @@ for trial in np.arange(numTrials):
         print wscore
         table['SpellCorrSource'][trial] = sc.source[0]
         table['SentenceWordScore'][trial] = wscore[0]
-
+        del sc
         #Adapt dbSNR on every trial
         if wscore > 50:
             dBSNR += -3
@@ -339,7 +342,7 @@ for trial in np.arange(numTrials):
         text.draw()
         win.flip()
         core.wait(0.5)
-
+        
 
 
 print table
