@@ -20,11 +20,9 @@ import pandas as pd
 import requests
 import inflect
 import time
-
-def norvig(text):
-    
-    import re, collections
-    
+import re, collections
+filename = 'hello'
+def norvigTrain(filename):
     def words(text): return re.findall('[a-z]+', text.lower()) 
 
     def train(features):
@@ -32,9 +30,11 @@ def norvig(text):
         for f in features:
             model[f] += 1
         return model
-
-    NWORDS = train(words(file(r'C:\TCDTIMIT\norvig_big.txt').read()))
-
+    NWORDS = train(words(file(filename).read()))    
+    return NWORDS
+   
+def norvig(text,NWORDS):
+    
     alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
     def edits1(word):
@@ -77,6 +77,7 @@ class SentCompare:
             
         self.target = target
         self.source = source
+        self.NWORDS = norvigTrain(r'C:/TCDTIMIT/moby.txt')
         self.spelldict = nltk.corpus.words.words()
         self.phondict = nltk.corpus.cmudict.entries()
         self.tableFolder = r'C:/TCDTIMIT/Tables/'
@@ -105,7 +106,8 @@ class SentCompare:
             other than to parse based on blank space, remove punctuation/non-English chars and replace digits with words 
             It is not designed to work with non-word lemma (i.e. "n't")
         """ 
-#       d = enchant.Dict("en_US") #Use the American Enchant dictionary        p = inflect.engine()
+#        d = enchant.Dict("en_US") #Use the American Enchant dictionary        
+        p = inflect.engine()
         sourcecorr = []
         rcnt =enumerate(self.source)
         for sent in self.source:
@@ -118,11 +120,13 @@ class SentCompare:
             rint =rcnt.next()
             for word in sp:    
                 #Replace digits with words
+
                 if word.isdigit():
                     word = p.number_to_words(word)
-                if norvig(word)[0] != word: 
+                nword = norvig(word,self.NWORDS)
+                if nword[0] != word: 
                     replacefound = False
-                    for sug in norvig(word): 
+                    for sug in nword: 
                         #loop through suggestions to find word match with target sentence
                         #replace and quit looking if target match is found
                         if sug in self.target[rint[0]].split():  
@@ -133,8 +137,8 @@ class SentCompare:
                             break
                     #If no match with target is found, replace with first suggestion    
                     if replacefound == False:
-                        if norvig(word):
-                            wf = wf + ' ' + norvig(word)[0].lower()
+                        if nword:
+                            wf = wf + ' ' + nword[0].lower()
                         else:
                             wf = wf + ' ' + word.lower()
                         #print(word)
@@ -163,7 +167,8 @@ class SentCompare:
             other than to parse based on blank space, remove punctuation/non-English chars and replace digits with words 
             It is not designed to work with non-word lemma (i.e. "n't")
         """
-        d = enchant.Dict("en_US") #Use the American Enchant dictionary        p = inflect.engine()
+        d = enchant.Dict("en_US") #Use the American Enchant dictionary        
+        p = inflect.engine()
         sourcecorr = []
         rcnt =enumerate(self.source)
         for sent in self.source:
