@@ -22,7 +22,7 @@ import inflect
 import time
 import re, collections
 
-def norvigTrain(filename):
+def norvigTrain(filename=[]):
     def words(text): return re.findall('[a-z]+', text.lower()) 
 
     def train(features):
@@ -30,7 +30,12 @@ def norvigTrain(filename):
         for f in features:
             model[f] += 1
         return model
-    NWORDS = train(words(file(filename).read()))    
+    if filename:
+        NWORDS = train(words(file(filename).read()))
+    else:
+        WORDLIST = ' '.join(nltk.corpus.words.words())
+        NWORDS = train(words(WORDLIST))
+        
     return NWORDS
    
 def norvig(text,NWORDS):
@@ -77,7 +82,6 @@ class SentCompare:
             
         self.target = target
         self.source = source
-        self.NWORDS = norvigTrain(r'C:/TCDTIMIT/norvig_moby.txt')
         self.spelldict = nltk.corpus.words.words()
         self.phondict = nltk.corpus.cmudict.entries()
         self.tableFolder = r'C:/TCDTIMIT/Tables/'
@@ -90,7 +94,7 @@ class SentCompare:
             self.GeneratePhonemeTable()
             self.SentenceAnalysis()
             
-    def SpellCorrectNorvig(self):
+    def SpellCorrectNorvig(self,NWORDS):
         """Corrects the spelling of the source sentences using
         Norvig spell checking.
         
@@ -110,7 +114,6 @@ class SentCompare:
         
         source = self.source
         target = self.target
-        NWORDS = self.NWORDS
         sourcecorr = []
         p = inflect.engine()
         rcnt =enumerate(source)
@@ -128,7 +131,7 @@ class SentCompare:
                 if word.isdigit():
                     word = p.number_to_words(word)
                 nword = norvig(word,NWORDS)
-                if nword[0] != word: 
+                if nword[0] != word and not word in self.target[rint[0]].split(): 
                     replacefound = False
                     for sug in nword: 
                         #loop through suggestions to find word match with target sentence

@@ -47,4 +47,11 @@ Temporary Items
 .apdisk
 *.pyc
 Collection/AVPresent2.pyc
+<<<<<<< HEAD
 *.mp3
+=======
+*.pyc
+*.pyc
+Collection/AVPresent2.pyc
+Collection/AVPresent2.pyc
+>>>>>>> origin/master
