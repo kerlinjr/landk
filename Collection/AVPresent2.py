@@ -48,6 +48,9 @@ landkPath = os.path.normpath(os.getcwd() + os.sep + os.pardir+r'\Analysis')
 sys.path.append(landkPath)
 import landkit
 reload(landkit)
+NWORDS=landkit.norvigTrain()
+
+
 import enchant
 
 def rms(array):
@@ -315,7 +318,8 @@ for trial in np.arange(numTrials):
         #Just the spell correction and word -level scoring
         sc = landkit.SentCompare([targetSentence],[sourceSentence],False)
         
-        sc.SpellCorrectNorvig() #enchant crashes this script at testing computer for unknown reason!!! 
+        #sc.SpellCorrect() #enchant crashes this script at testing computer for unknown reason!!! 
+        sc.SpellCorrectNorvig(NWORDS) 
         
         sc.ScoreWords()
         
