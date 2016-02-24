@@ -39,6 +39,7 @@ def ShrinkVideo(inputfile,outputfile,centerPointx,centerPointy):
         rs.write_videofile(outputfile)
     except IOError:
         print "Failed to make " + outputfile
+        pass
 
         
 
@@ -53,7 +54,7 @@ def CopyFile(inputfile,outputfile):
 
 #Start script
 folders = os.listdir('C:/TCDTIMIT/volunteersFull/')
-folders = folders[6:7]
+folders = folders
 centerpoints = pd.read_csv('C:/TCDTIMIT/facecenterpoints/FaceCenterPointsBridge.csv')
 
         
