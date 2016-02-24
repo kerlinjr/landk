@@ -21,7 +21,7 @@ import requests
 import inflect
 import time
 import re, collections
-filename = 'hello'
+
 def norvigTrain(filename):
     def words(text): return re.findall('[a-z]+', text.lower()) 
 
@@ -77,7 +77,7 @@ class SentCompare:
             
         self.target = target
         self.source = source
-        self.NWORDS = norvigTrain(r'C:/TCDTIMIT/moby.txt')
+        self.NWORDS = norvigTrain(r'C:/TCDTIMIT/norvig_moby.txt')
         self.spelldict = nltk.corpus.words.words()
         self.phondict = nltk.corpus.cmudict.entries()
         self.tableFolder = r'C:/TCDTIMIT/Tables/'
@@ -107,10 +107,14 @@ class SentCompare:
             It is not designed to work with non-word lemma (i.e. "n't")
         """ 
 #        d = enchant.Dict("en_US") #Use the American Enchant dictionary        
-        p = inflect.engine()
+        
+        source = self.source
+        target = self.target
+        NWORDS = self.NWORDS
         sourcecorr = []
-        rcnt =enumerate(self.source)
-        for sent in self.source:
+        p = inflect.engine()
+        rcnt =enumerate(source)
+        for sent in source:
             wf = ''
             #Make lowercase and strip off all characters except 26 letter alpha-numeric, "'",or " "
             allowedChars = set(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',"'"," ","-",'1','2','3','4','5','6','7','8','9','0'])               
@@ -123,19 +127,19 @@ class SentCompare:
 
                 if word.isdigit():
                     word = p.number_to_words(word)
-                nword = norvig(word,self.NWORDS)
+                nword = norvig(word,NWORDS)
                 if nword[0] != word: 
                     replacefound = False
                     for sug in nword: 
                         #loop through suggestions to find word match with target sentence
                         #replace and quit looking if target match is found
-                        if sug in self.target[rint[0]].split():  
+                        if sug in target[rint[0]].split():  
                             wf = wf + ' ' + sug.lower()
                             replacefound = True
                             #print(word)
                             #print(sug)
                             break
-                    #If no match with target is found, replace with first suggestion    
+                        #If no match with target is found, replace with first suggestion    
                     if replacefound == False:
                         if nword:
                             wf = wf + ' ' + nword[0].lower()
@@ -148,8 +152,8 @@ class SentCompare:
                     wf = wf + ' ' + word.lower()
             sourcecorr.append(wf[1:])
         self.source = sourcecorr
-        #Needs a break after spell checking?
-        time.sleep(0.2)       
+
+      
  
     def SpellCorrect(self):
         """Corrects the spelling of the source sentences using
@@ -194,7 +198,7 @@ class SentCompare:
                             #print(word)
                             #print(sug)
                             break
-                    #If no match with target is found, replace with first suggestion    
+                        #If no match with target is found, replace with first suggestion    
                     if replacefound == False:
                         if d.suggest(word):
                             wf = wf + ' ' + d.suggest(word)[0].lower()
@@ -207,8 +211,7 @@ class SentCompare:
                     wf = wf + ' ' + word.lower()
             sourcecorr.append(wf[1:])
         self.source = sourcecorr
-        #Needs a break after spell checking?
-        time.sleep(0.2)
+
             
     def ScoreWords(self):
         """Aligns the words of the source sentence to match the target sentence
