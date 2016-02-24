@@ -187,7 +187,7 @@ class SentCompare:
                 #Replace digits with words
                 if word.isdigit():
                     word = p.number_to_words(word)
-                if d.check(word) == False: 
+                if d.check(word) == False and not word in self.target[rint[0]].split(): 
                     replacefound = False
                     for sug in d.suggest(word): 
                         #loop through suggestions to find word match with target sentence
