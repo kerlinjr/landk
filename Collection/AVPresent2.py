@@ -1,5 +1,6 @@
 """Audio visual presentation of TCD-TIMIT sentences in noise
-
+#AUDIOVISUAL Sychrony TIMING CURRENTLY NOT PERFECT (+- 15ms, centered near 0)
+#ONLY for behavioural use, not EEG
 
 PsychoPy movie presentation dependencies:
 Movie2 does require:
@@ -84,6 +85,7 @@ if test:
     startTimeStr = str(time.time())[:-3]
     timeCorrection = 0.070
     speaker = 's60T'
+    increaseVolume = 0
 else:
     numTrials = 36
     subject = textIn[0]
@@ -92,6 +94,7 @@ else:
     startTimeStr = str(time.time())[:-3]
     timeCorrection = 0.070
     speaker = textIn[2]
+    increaseVolume = 15
 
 table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName','VideoFile','VideoCond','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
 #Set paths 
@@ -131,7 +134,7 @@ microphone.switchOn(sampleRate=16000)
 mic = microphone.AdvAudioCapture(name='mic', saveDir=dataOutPath, stereo=False)
 
 #Initiate the PsychPy window
-win = visual.Window([1000, 1000])
+win = visual.Window([1920, 1080])
 #sound.init(48000,buffer=500)
 
 if not test:
@@ -156,7 +159,7 @@ if not test:
     info,speech = scipy.io.wavfile.read(speechFile)
     speech = speech.astype('float32')
     # set speech to match babble0 RMS
-    matchSpeech = babbleRMS/rms(speech)*speech
+    matchSpeech = babbleRMS/rms(speech)*speech*db2amp(increaseVolume)
     scipy.io.wavfile.write(tmpSoundFile, 48000, matchSpeech.astype('int16'))
     exampleSentence = sound.Sound(tmpSoundFile)
     exampleSentence.play()
@@ -211,7 +214,7 @@ for trial in np.arange(numTrials):
         babbleRMS = rms(babble)
         matchSpeech = babbleRMS/rms(speech)*speech
         adjustedBabble = babble*db2amp(-dBSNR)
-        audioOut = matchSpeech + adjustedBabble
+        audioOut = (matchSpeech + adjustedBabble)*db2amp(increaseVolume)
         #Export mixed speech and babble to a temporary wav file
         scipy.io.wavfile.write(tmpSoundFile, 48000, audioOut.astype('int16'))        
     else:
