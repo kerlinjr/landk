@@ -331,13 +331,13 @@ for trial in np.arange(numTrials):
         table['SpellCorrSource'][trial] = sc.source[0]
         table['SentenceWordScore'][trial] = wscore[0]
         del sc
-        #Adapt dbSNR on every trial
-        if wscore > 50:
-            dBSNR += -3
-        elif wscore == 50:
-            dBSNR += 0
-        elif wscore < 50:
-            dBSNR += 3    
+#        #Adapt dbSNR on every trial
+#        if wscore > 50:
+#            dBSNR += -3
+#        elif wscore == 50:
+#            dBSNR += 0
+#        elif wscore < 50:
+#            dBSNR += 3    
 
         #Output table to file
         table.to_csv(dataOutPath+ subject + startTimeStr  +'.csv')
@@ -348,7 +348,7 @@ for trial in np.arange(numTrials):
         text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
         text.draw()
         win.flip()
-        core.wait(0.5)
+        core.wait(1.0)
         
 
 

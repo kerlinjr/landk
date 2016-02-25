@@ -144,9 +144,9 @@ class SentCompare:
                             break
                         #If no match with target is found, replace with first suggestion    
                     if replacefound == False:
-                        if nword:
-                            wf = wf + ' ' + nword[0].lower()
-                        else:
+#                        if nword:
+#                            wf = wf + ' ' + nword[0].lower()
+#                        else:
                             wf = wf + ' ' + word.lower()
                         #print(word)
                         #print(d.suggest(word)[0])
