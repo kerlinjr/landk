@@ -37,9 +37,10 @@ def ShrinkVideo(inputfile,outputfile,centerPointx,centerPointy):
     # Report back if writing file failed
     try:
         rs.write_videofile(outputfile)
-    except IOError:
-        print "Failed to make " + outputfile
+    except:
         pass
+        print "Failed to make " + outputfile
+
 
         
 
