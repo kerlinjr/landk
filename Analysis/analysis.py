@@ -24,7 +24,7 @@ reload(landkit)
 
 
 lktable = pd.read_csv(r'C:\TCDTIMIT\dataOut\sb\1456357335\sb1456357335.csv')
-sc = landkit.SentCompare(lktable['TargetSentence'],lktable['SourceSentence'],True)
+sc = landkit.SentCompare(lktable['TargetSentence'],lktable['SourceSentence'],False)
 
 
 ## Make pandas table 

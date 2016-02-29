@@ -57,7 +57,7 @@ def norvig(text,NWORDS):
 
     def correct(word):
         candidates = known([word]) or known(edits1(word)) or known_edits2(word) or [word]
-        #return max(candidates, key=NWORDS.get)
+        #candidates = max(candidates, key=NWORDS.get)
         return list(candidates)
     return correct(text)
 
@@ -82,12 +82,13 @@ class SentCompare:
             
         self.target = target
         self.source = source
-        self.spelldict = r'C:\TCDTIMIT\SubtlexDict.txt' 
+        self.spellfile = r'C:\TCDTIMIT\SubtlexDict.txt'
+        self.spelldict = json.load(open(self.spellfile))
         self.phondict = nltk.corpus.cmudict.entries()
         self.tableFolder = r'C:/TCDTIMIT/Tables/'
         if full_execute == True:
             print 'go'
-            self.SpellCorrectNorvig(json.load(open(self.spelldict)))
+            self.SpellCorrectNorvig(self.spelldict)
             #self.SpellCorrect()
             self.ScoreWords()
             self.GeneratePhonemes()
@@ -95,7 +96,7 @@ class SentCompare:
             self.GeneratePhonemeTable()
             self.SentenceAnalysis()
             
-    def SpellCorrectNorvig(self,NWORDS):
+    def SpellCorrectNorvig(self):
         """Corrects the spelling of the source sentences using
         Norvig spell checking.
         
@@ -112,7 +113,7 @@ class SentCompare:
             It is not designed to work with non-word lemma (i.e. "n't")
         """ 
 #        d = enchant.Dict("en_US") #Use the American Enchant dictionary        
-        
+        NWORDS = self.spelldict
         source = self.source
         target = self.target
         sourcecorr = []
@@ -131,7 +132,8 @@ class SentCompare:
                 if word.isdigit():
                     word = p.number_to_words(word)
                 nword = norvig(word,NWORDS)
-                if nword[0] != word and not word in self.target[rint[0]].split(): 
+                #if nword[0] != word and not word in self.target[rint[0]].split(): 
+                if not word in self.target[rint[0]].split():
                     replacefound = False
                     for sug in nword: 
                         #loop through suggestions to find word match with target sentence
