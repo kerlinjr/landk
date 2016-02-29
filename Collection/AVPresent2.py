@@ -32,7 +32,7 @@ core.wait(.5)
 parallel.setData(0)
 '''
 
-logging.console.setLevel(logging.DEBUG)#get messages about the sound lib as it loads
+#logging.console.setLevel(logging.DEBUG)#get messages about the sound lib as it loads
 
 import time, os
 import sys
@@ -64,6 +64,7 @@ myDlg = gui.Dlg(title='AV Experiment')
 myDlg.addField("'Subject: '")
 myDlg.addField("'initialSNR: '")
 myDlg.addField("'Speaker: '")
+myDlg.addField("'If practice type y here: '")
 
 
 myDlg.show()  # show dialog and wait for OK or Cancel
@@ -76,7 +77,11 @@ else:
 
 
 test = 0
-
+if textIn[3]:
+    practice = 1
+else:
+    practice = 0
+    
 if test:
     numTrials = 6
     subject = 'tmp'
@@ -87,14 +92,24 @@ if test:
     speaker = 's60T'
     increaseVolume = 0
 else:
-    numTrials = 36
-    subject = textIn[0]
-    initialSNR = int(textIn[1])
-    monitorSpeed = 60
-    startTimeStr = str(time.time())[:-3]
-    timeCorrection = 0.070
-    speaker = textIn[2]
-    increaseVolume = 15
+    if practice:
+        numTrials = 10
+        subject = textIn[0]
+        initialSNR = 10
+        monitorSpeed = 60
+        startTimeStr = str(time.time())[:-3]
+        timeCorrection = 0.070
+        speaker = 's59F'
+        increaseVolume = 15
+    else:
+        numTrials = 32
+        subject = textIn[0]
+        initialSNR = int(textIn[1])
+        monitorSpeed = 60
+        startTimeStr = str(time.time())[:-3]
+        timeCorrection = 0.070
+        speaker = textIn[2]
+        increaseVolume = 15
 
 table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName','VideoFile','VideoCond','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
 #Set paths 
@@ -106,16 +121,23 @@ speakerPath = stimPath + speaker + r'/straightcam/'
 if test:
     speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'Test*.mp4')]
 else:
-    speechList = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'si*.mp4')]
+    speechListSI = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'si*.mp4')]
+    speechListSX = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'sx*.mp4')]
 
-#Check that you have the expected number of mp4 files
-if len(speechList) != numTrials:
-    print speechList
-    print 'Exiting...: Unexpected number of qualified *.mp4 files'
-    core.quit()
-    
-#Randomize the order of the speechList
+#Take the first 8 si and the first 24 sx, Randomize the order of the speechList
+speechList = speechListSI[0:8]
+speechList.extend(speechListSX[0:23])
 np.random.shuffle(speechList)    
+
+Check that you have the expected number of mp4 files
+if not practice == 1:
+    if not test == 1:
+        if len(speechList) != numTrials:
+            print speechList
+            print 'Exiting...: Unexpected number of qualified *.mp4 files'
+            core.quit()
+    
+
 tmpSoundFile = r'C:/TCDTIMIT/Temp/temp.wav'
 babblePath = r'C:/TCDTIMIT/Babble/'
 babbleList = [f[:-4] for f in os.listdir(babblePath) if fnmatch.fnmatch(f, 'babble*.wav')]
@@ -322,7 +344,7 @@ for trial in np.arange(numTrials):
         sc = landkit.SentCompare([targetSentence],[sourceSentence],False)
         
         #sc.SpellCorrect() #enchant crashes this script at testing computer for unknown reason!!! 
-        sc.SpellCorrectNorvig(NWORDS) 
+        sc.SpellCorrectNorvig() 
         
         sc.ScoreWords()
         
@@ -331,13 +353,13 @@ for trial in np.arange(numTrials):
         table['SpellCorrSource'][trial] = sc.source[0]
         table['SentenceWordScore'][trial] = wscore[0]
         del sc
-#        #Adapt dbSNR on every trial
-#        if wscore > 50:
-#            dBSNR += -3
-#        elif wscore == 50:
-#            dBSNR += 0
-#        elif wscore < 50:
-#            dBSNR += 3    
+        #Adapt dbSNR on every trial
+        if wscore > 50:
+            dBSNR += -2
+        elif wscore == 50:
+            dBSNR += 0
+        elif wscore < 50:
+            dBSNR += 2    
 
         #Output table to file
         table.to_csv(dataOutPath+ subject + startTimeStr  +'.csv')
@@ -353,4 +375,5 @@ for trial in np.arange(numTrials):
 
 
 print table
+print str(dBSNR)
 core.quit()
