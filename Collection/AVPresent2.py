@@ -136,9 +136,9 @@ else:
     design = pd.DataFrame.from_csv(os.getcwd()+r'\AVPresent2Design.csv')    
 design = design.reset_index()
 design['FileName'] = speechList
-design = design.reindex(np.random.permutation(design.index))
+design = design.reindex(np.random.permutation(design.index)).reset_index(drop=True)
 speechList = design['FileName']
-table = design.join(table)
+table = table.join(design)
 
 vidSwitch = table['VideoCond']
 
