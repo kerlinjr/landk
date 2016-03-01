@@ -51,7 +51,6 @@ import landkit
 reload(landkit)
 NWORDS=landkit.norvigTrain()
 
-
 import enchant
 
 def rms(array):
@@ -111,7 +110,9 @@ else:
         speaker = textIn[2]
         increaseVolume = 15
 
-table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','FileName','VideoFile','VideoCond','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
+
+table = pd.DataFrame(columns = {'Subject','Speaker','dBSNR','TrialNum','VideoFile','Babble','TargetSentence','SourceSentence','SpellCorrSource','SentenceWordScore'}, index = np.arange(numTrials))
+
 #Set paths 
 stimPath = r'C:/TCDTIMIT/volunteersSmall/'
 dataOutPath = r'C:/TCDTIMIT/dataOut/' + subject + r'/' + startTimeStr + r'/'
@@ -125,11 +126,23 @@ else:
     speechListSX = [f[:-4] for f in os.listdir(speakerPath) if fnmatch.fnmatch(f, 'sx*.mp4')]
 
 #Take the first 8 si and the first 24 sx, Randomize the order of the speechList
-speechList = speechListSI[0:8]
-speechList.extend(speechListSX[0:23])
-np.random.shuffle(speechList)    
+if practice:
+    speechList = speechListSI[0:3]
+    speechList.extend(speechListSX[0:7])  
+    design = pd.DataFrame.from_csv(os.getcwd()+r'\AVPresent2DesignPractice.csv')
+else:
+    speechList = speechListSI[0:8]
+    speechList.extend(speechListSX[0:24])  
+    design = pd.DataFrame.from_csv(os.getcwd()+r'\AVPresent2Design.csv')    
+design = design.reset_index()
+design['FileName'] = speechList
+design = design.reindex(np.random.permutation(design.index))
+speechList = design['FileName']
+table = design.join(table)
 
-Check that you have the expected number of mp4 files
+vidSwitch = table['VideoCond']
+
+#Check that you have the expected number of mp4 files
 if not practice == 1:
     if not test == 1:
         if len(speechList) != numTrials:
@@ -144,12 +157,6 @@ babbleList = [f[:-4] for f in os.listdir(babblePath) if fnmatch.fnmatch(f, 'babb
 bab0File = babblePath + r'babble0.wav'
 info,bab0 = scipy.io.wavfile.read(bab0File)
 babbleRMS = rms(bab0)
-
-#Randomize video condition
-vidSwitch = (["Normal"]*int(numTrials/2))
-vidSwitch.extend(["Static"]*int(numTrials/2)) 
-vidSwitch = np.array(vidSwitch)
-np.random.shuffle(vidSwitch)
 
 # Set up microphone, must be 16000 or 8000 Hz for speech recognition
 microphone.switchOn(sampleRate=16000)
@@ -196,7 +203,7 @@ core.wait(0.5)
 k = event.waitKeys()
 
 
-dBSNR = initialSNR
+dBSNRBabble = initialSNR
 
 #Start trial loop
 for trial in np.arange(numTrials):
@@ -204,7 +211,7 @@ for trial in np.arange(numTrials):
     table['Subject'][trial] = subject
     table['Speaker'][trial] = speaker
     table['TrialNum'][trial] = trial
-    table['VideoCond'][trial] = vidSwitch[trial]
+    
     
     #Select the file to present
     fname = speechList[trial]
@@ -217,11 +224,16 @@ for trial in np.arange(numTrials):
     babbleFile = babblePath + bname + '.wav'
     videoFile = speakerPath + fname + '.mp4'
 
-    table['FileName'][trial] = fname
     table['VideoFile'][trial] = videoFile
     table['Babble'][trial] = bname
-    table['dBSNR'][trial] = dBSNR
+
     
+    if table['BabbleCond'][trial] == "On":
+        dBSNR = dBSNRBabble
+    elif table['BabbleCond'][trial] == "Off":
+        dBSNR = 40
+        
+    table['dBSNR'][trial] = dBSNR        
     #load in text
     if not test:
         txtFile = speakerPath + fname + '.txt'
@@ -353,13 +365,14 @@ for trial in np.arange(numTrials):
         table['SpellCorrSource'][trial] = sc.source[0]
         table['SentenceWordScore'][trial] = wscore[0]
         del sc
-        #Adapt dbSNR on every trial
-        if wscore > 50:
-            dBSNR += -2
-        elif wscore == 50:
-            dBSNR += 0
-        elif wscore < 50:
-            dBSNR += 2    
+        #Adapt dbSNR on every noise trial
+        if table['BabbleCond'][trial] == "On":
+            if wscore > 50:
+                dBSNRBabble += -2
+            elif wscore == 50:
+                dBSNRBabble += 0
+            elif wscore < 50:
+                dBSNRBabble += 2    
 
         #Output table to file
         table.to_csv(dataOutPath+ subject + startTimeStr  +'.csv')
