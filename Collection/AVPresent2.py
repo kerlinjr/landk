@@ -127,8 +127,8 @@ else:
 
 #Take the first 8 si and the first 24 sx, Randomize the order of the speechList
 if practice:
-    speechList = speechListSI[0:3]
-    speechList.extend(speechListSX[0:7])  
+    speechList = speechListSI[3:6]
+    speechList.extend(speechListSX[7:14])  
     design = pd.DataFrame.from_csv(os.getcwd()+r'\AVPresent2DesignPractice.csv')
 else:
     speechList = speechListSI[0:8]
@@ -204,6 +204,7 @@ k = event.waitKeys()
 
 
 dBSNRBabble = initialSNR
+np.random.shuffle(babbleList)
 
 #Start trial loop
 for trial in np.arange(numTrials):
@@ -217,8 +218,8 @@ for trial in np.arange(numTrials):
     fname = speechList[trial]
     
     #Shuffle and pick a random babble file with replacement
-    np.random.shuffle(babbleList)
-    bname = babbleList[0]
+    
+    bname = babbleList[trial]
     
     speechFile = speakerPath + fname + '.wav'
     babbleFile = babblePath + bname + '.wav'
@@ -231,7 +232,7 @@ for trial in np.arange(numTrials):
     if table['BabbleCond'][trial] == "On":
         dBSNR = dBSNRBabble
     elif table['BabbleCond'][trial] == "Off":
-        dBSNR = 40
+        dBSNR = 999
         
     table['dBSNR'][trial] = dBSNR        
     #load in text
@@ -388,5 +389,5 @@ for trial in np.arange(numTrials):
 
 
 print table
-print str(dBSNR)
+print str(dBSNRBabble)
 core.quit()
