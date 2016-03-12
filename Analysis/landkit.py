@@ -88,7 +88,7 @@ class SentCompare:
         self.tableFolder = r'C:/TCDTIMIT/Tables/'
         if full_execute == True:
             print 'go'
-            self.SpellCorrectNorvig(self.spelldict)
+            self.SpellCorrectNorvig()
             #self.SpellCorrect()
             self.ScoreWords()
             self.GeneratePhonemes()
@@ -133,7 +133,7 @@ class SentCompare:
                     word = p.number_to_words(word)
                 nword = norvig(word,NWORDS)
                 #if nword[0] != word and not word in self.target[rint[0]].split(): 
-                if not word in self.target[rint[0]].split():
+                if not word in target[rint[0]].split():
                     replacefound = False
                     for sug in nword: 
                         #loop through suggestions to find word match with target sentence
@@ -464,6 +464,7 @@ class SentCompare:
 
 
         #Load n word frequencies
+        
         ngramf1 =  pd.read_table(self.tableFolder + r'Norvig\count_1w.txt',header=None,names=['Word','WordFreq',])
         ngramf2 = pd.read_table(self.tableFolder + r'COCAFree\Ngram2.txt',header=None,names=['BigramFreq','Bi0','Bi1'])
         ngramf3 = pd.read_table(self.tableFolder + r'COCAFree\Ngram3.txt',header=None,names=['TrigramFreq','Tri0','Tri1','Tri2'])
@@ -559,29 +560,6 @@ class SentCompare:
         
         
 
-        
-
-    
-    def GenerateWordTable(self):
-        """Makes a Pandas table out of all useful word variables from the class structure
-    
-        Returns:
-            wordTable (pandas table) A Pandas table of relevant variables
-        
-        Notes: 
-            NEEDS WORK
-        """
-
-    def GenerateSentenceTable(self):
-        """Makes a Pandas table out of all useful sentence variables from the class structure
-    
-        Returns:
-            sentTable (pandas table) A Pandas table of relevant variables
-        
-        Notes: 
-            NEEDS WORK
-        """
-            
     def GeneratePhonemeTable(self):
         """Makes a Pandas table out of all useful phoneme variables from the class structure
     
