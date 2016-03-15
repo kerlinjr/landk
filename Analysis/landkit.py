@@ -11,7 +11,7 @@ These functions will be used to load, preprocess and analyse Land Data
 import sys
 sys.path.append(r'C:\Users\jrkerlin\Documents\GitHub\landk\Analysis')
 import nltk
-import enchant #(will not install on 64-bit python)
+#import enchant #(will not install on 64-bit python)
 from alignment.sequence import Sequence 
 from alignment.vocabulary import Vocabulary
 from alignment.sequencealigner import SimpleScoring, GlobalSequenceAligner
@@ -21,6 +21,7 @@ import requests
 import inflect
 import json
 import re, collections
+import speech_recognition as sr
 
 def norvigTrain(filename=[]):
     def words(text): return re.findall('[a-z]+', text.lower()) 
@@ -60,6 +61,19 @@ def norvig(text,NWORDS):
         #candidates = max(candidates, key=NWORDS.get)
         return list(candidates)
     return correct(text)
+
+def ATTSR(filename):
+    mydict = json.load(open("C:\\TCDTIMIT\\ATTkeys\\attkeys.txt"))
+    WAV_FILE =filename
+    print WAV_FILE
+    # use "english.wav" as the audio source
+    r = sr.Recognizer()
+    with sr.WavFile(WAV_FILE) as source:
+        audio = r.record(source) # read the entire WAV file
+    # recognize speech using AT&T Speech to Text
+    ATT_APP_KEY = str(mydict['CLIENT_ID']) # AT&T Speech to Text app keys are 32-character lowercase alphanumeric strings
+    ATT_APP_SECRET = str(mydict['CLIENT_SECRET']) # AT&T Speech to Text app secrets are 32-character lowercase alphanumeric strings
+    return r.recognize_att(audio, app_key=ATT_APP_KEY, app_secret=ATT_APP_SECRET)
 
 
 class SentCompare:
@@ -158,9 +172,7 @@ class SentCompare:
                     
             sourcecorr.append(wf[1:])
         self.source = sourcecorr
-
-      
- 
+         
     def SpellCorrect(self):
         """Corrects the spelling of the source sentences using
         Enchant spell checking.

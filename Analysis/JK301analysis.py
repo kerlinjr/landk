@@ -13,6 +13,7 @@ import numpy as np
 import pickle
 from matplotlib import *
 import sys
+
 #Add path to landkit
 
 sys.path.append(r'C:\Users\jrkerlin\Documents\GitHub\landk\Analysis')
@@ -37,8 +38,19 @@ for folder in folders:
          lks= pd.read_csv(csvName[0])
          lks['VerbalResponse'] = wavNames
          lktable = lktable.append(lks)
-         
+         print "Now Loading ..."+" ".join([folder, folder2])
 lktable = lktable.reset_index()
+
+speechToText = []
+for f in lktable['VerbalResponse']:
+    try:
+        transcript = landkit.ATTSR(f)
+    except:
+        pass
+        transcript = " "
+    speechToText.append(transcript)
+    print speechToText[-1]
+lktable['speechToText'] = speechToText 
 # Set all non-responses to a single black         
 lktable['SourceSentence'] = lktable['SourceSentence'].fillna(" ")        
 sc = landkit.SentCompare(list(lktable['TargetSentence']),list(lktable['SourceSentence']),True)
