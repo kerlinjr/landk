@@ -3,6 +3,7 @@
 #ONLY for behavioural use, not EEG
 
 PsychoPy movie presentation dependencies:
+
 Movie2 does require:
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -11,7 +12,16 @@ Movie2 does require:
     *. For Linux, it is available via whatever package manager you use.
     *. For OSX, ..... ?
 2. VLC application. Just install the standard VLC (32bit) for your OS. http://www.videolan.org/vlc/index.html
+
+Movie3 does require:
+~~~~~~~~~~~~~~~~~~~~~
+
+moviepy (which requires imageio, Decorator). These can be installed
+(including dependencies) on a standard Python install using `pip install moviepy`
+imageio will download further compiled libs (ffmpeg) as needed
+
 """
+
 
 from __future__ import division
 
@@ -78,33 +88,40 @@ if myDlg.OK:  # then the user pressed OK
 else:
     print('user cancelled')    
 
-movStimVersion = 2
+movStimVersion = 3
 
 test = 0
 if textIn[2] == 'y':
     practice = 1
+    test = 0
+elif textIn[2] == 't':
+    practice = 0
+    test = 1
 else:
     practice = 0
+    test = 0
     
 if test:
     numTrials = 6
-    subject = 'tmp'
-    initialSNR = 40
+    subject = '99'
+    initialSNR = 999
     monitorSpeed = 60
     startTimeStr = str(time.time())[:-3]
     timeCorrection = 0.070
     talker = 's60T'
-    increaseVolume = 0
+    talkerNum = '99'
+    increaseVolume = 25
 else:
     if practice:
         numTrials = 2
-        subject = textIn[0]
+        subject = '99'
         initialSNR = 999
         monitorSpeed = 60
         startTimeStr = str(time.time())[:-3]
         timeCorrection = 0.070
         talker = 's01M'
-        increaseVolume = 20
+        talkerNum = '99'
+        increaseVolume = 25
     else:
         numTrials = 20
         subject = textIn[0]
@@ -113,19 +130,25 @@ else:
         startTimeStr = str(time.time())[:-3]
         timeCorrection = 0.070
         talkerNum = textIn[1]
-        increaseVolume = 20
+        increaseVolume = 25
 
 #Set paths 
 rootPath = normjoin('C:/Experiments/JK302')
 stimPath = normjoin('C:/TCDTIMIT/volunteersSmall')
-dataOutPath = normjoin(rootPath,'dataOut',subject + startTimeStr) 
-table = pd.read_csv(normjoin(rootPath,'StudyDesignJK302_r1.csv'))
+dataOutPath = normjoin(rootPath,'dataOut',subject) 
+if practice:
+    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK302Practice_r1.csv'))
+elif test:
+    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK302Test_r1.csv'))
+else:
+    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK302_r1.csv'))
 table = table[table['Subject']== int(subject)]
 table = table[table['SubjectTalkerNum']== int(talkerNum)]
 table = table.reset_index()
 table['SourceSentence'] = ' '
 table['TargetSentence'] = ' '
 table['dBSNR'] = -999
+print table
 talker = table['Talker'].iloc[0]
 
 timeTable = pd.read_csv(normjoin(rootPath,'timeTable_r1.csv'))
@@ -170,7 +193,7 @@ win = visual.Window([1920, 1080])
 
 if not test:
     #Present an example of the talker without noise. No response taken.
-    keystext = "The first sentence you will hear is an example sentence from the target talker you will be listening for. Please listen to the example sentence. You will not need to make any response.Press spacebar when ready. "
+    keystext = "Please listen to the example sentence.Press spacebar when ready. "
     text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
     text.draw()
     win.flip()
@@ -227,16 +250,17 @@ for trial in np.arange(numTrials):
         dBSNR = 999
         
     table['dBSNR'].iloc[trial] = dBSNR        
-#   Find the range of speech
-    tt = timeTable[(timeTable['Talker']== talker[1:]) & (timeTable['SentenceID']== fname)].reset_index()
-    speechRange = tt['Onset'].iloc[[1,-1]].values # FInd the range of all speech
-    speechRange = np.round(speechRange)
-    
-    #Phonemic Restoration code
-#    shRange = tt[tt['Phoneme'] == 't']
+
      
     #load in text
     if not test:
+        #   Find the range of speech
+        tt = timeTable[(timeTable['Talker']== talker[1:]) & (timeTable['SentenceID']== fname)].reset_index()
+        speechRange = tt['Onset'].iloc[[1,-1]].values # FInd the range of all speech
+        speechRange = np.round(speechRange)
+        
+        #Phonemic Restoration code
+    #    shRange = tt[tt['Phoneme'] == 't']
         txtFile = normjoin(talkerPath, fname + '.txt')
         words = pd.read_csv(txtFile,sep = ' ',header = None,names = ['tmp0','tmp1','Words'])['Words']
         targetSentence = ' '.join(words)
@@ -262,7 +286,7 @@ for trial in np.arange(numTrials):
         #Export mixed speech and babble to a temporary wav file
         scipy.io.wavfile.write(tmpSoundFile, 48000, audioOut.astype('int16'))        
     else:
-        info,speech = scipy.io.wavfile.read(talkerPath + 'TestVideo.wav')
+        info,speech = scipy.io.wavfile.read(normjoin(talkerPath, 'TestVideo.wav'))
         speech = speech[int(timeCorrection*48000):]
         scipy.io.wavfile.write(tmpSoundFile, 48000, speech.astype('int16'))
 
