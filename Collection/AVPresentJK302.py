@@ -110,7 +110,7 @@ if test:
     timeCorrection = 0.070
     talker = 's60T'
     talkerNum = '99'
-    increaseVolume = 25
+    increaseVolume = 20
 else:
     if practice:
         numTrials = 2
@@ -121,7 +121,7 @@ else:
         timeCorrection = 0.070
         talker = 's01M'
         talkerNum = '99'
-        increaseVolume = 25
+        increaseVolume = 20
     else:
         numTrials = 20
         subject = textIn[0]
@@ -130,7 +130,7 @@ else:
         startTimeStr = str(time.time())[:-3]
         timeCorrection = 0.070
         talkerNum = textIn[1]
-        increaseVolume = 25
+        increaseVolume = 20
 
 #Set paths 
 rootPath = normjoin('C:/Experiments/JK302')
