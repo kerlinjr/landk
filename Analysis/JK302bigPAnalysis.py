@@ -20,7 +20,7 @@ dfPT = pd.read_excel(os.path.normpath('C:\TCDTIMIT\Tables\Custom\TablesPhoneme.x
 bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
 bigP = bigP[bigP['SoundCond'] == 'Babble']
 #bigP = bigP[bigP['VideoCond'] == 'AV']
-bigP = bigP.reset_index()
+bigP = bigP.reindex(np.arange(0,len(bigP)))
 bigP['MaxPhonInSent']=bigP[['SentenceCount','PhonemeIndex']].groupby('SentenceCount').transform(lambda x: max(x))
 bigP['DistenceToEndPhon'] = bigP['MaxPhonInSent']-bigP['PhonemeIndex']
 allPhons = np.unique(dfPT['CMU Phonemes'])
