@@ -15,24 +15,49 @@ import os
 from matplotlib.pyplot import *
 from statsmodels.nonparametric.smoothers_lowess import lowess 
 
-
+dfPT = pd.read_excel(os.path.normpath('C:\TCDTIMIT\Tables\Custom\TablesPhoneme.xlsx'),encoding='latin-1')
 #PRP analysis
 bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
-sentPhonMax = bigP.groupby('SentenceCount').transform(max(x))
+bigP = bigP[bigP['SoundCond'] == 'Babble']
+#bigP = bigP[bigP['VideoCond'] == 'AV']
+bigP = bigP.reset_index()
 bigP['MaxPhonInSent']=bigP[['SentenceCount','PhonemeIndex']].groupby('SentenceCount').transform(lambda x: max(x))
 bigP['DistenceToEndPhon'] = bigP['MaxPhonInSent']-bigP['PhonemeIndex']
-isPhon = bigP['SourcePhoneme'] == 'TH'
+allPhons = np.unique(dfPT['CMU Phonemes'])
 prePhon = 5
 postPhon = 8
+xAxis = np.arange(-prePhon,postPhon+1)
 isOver =  bigP['PhonemeIndex'] >= prePhon
 isMinAhead =  bigP['DistenceToEndPhon'] >= postPhon
-eventIndex = bigP[isPhon & isOver & isMinAhead].index
-lenIdx = len(eventIndex)
-PRP = np.zeros(prePhon+postPhon+1)
-for idx in eventIndex:
-    PRP += bigP.iloc[idx-prePhon:idx+postPhon+1].loc[:,('PhonemeHitBool')]
-plot(PRP/float(lenIdx))
 
+isAll = bigP['TargetPhoneme'].isin(allPhons)
+isCorrect = bigP['PhonemeHitBool'].isin([True])
+
+eventIndex = bigP[isAll & isOver & isMinAhead & isCorrect].index
+lenIdx = len(eventIndex)
+aPRP = np.zeros(prePhon+postPhon+1)
+for idx in eventIndex:
+    aPRP += bigP.iloc[idx-prePhon:idx+postPhon+1].loc[:,('PhonemeHitBool')]/float(lenIdx)*100
+#aPRP = aPRP-np.mean(aPRP[0:prePhon])    
+#plot(aPRP)
+f, axtup =subplots(7,6,figsize = (24,12),sharex='col',sharey='row')
+ylim = [0,100]
+for x,phon in enumerate(allPhons):
+    isPhon = isAll = bigP['TargetPhoneme'].isin([phon])
+    eventIndex = bigP[isPhon & isOver & isMinAhead & isCorrect].index
+    lenIdx = len(eventIndex)
+    PRP = np.zeros(prePhon+postPhon+1)
+    for idx in eventIndex:
+        PRP += bigP.iloc[idx-prePhon:idx+postPhon+1].loc[:,('PhonemeHitBool')]/float(lenIdx)*100
+#    PRP = PRP-np.mean(PRP[0:prePhon])
+    figPos = axtup[np.unravel_index(x,(7,6))]
+    figPos.set_ylim(ylim)
+    figPos.plot(xAxis,aPRP)
+    figPos.plot(xAxis,PRP)
+    figPos.plot([0,0],[ylim[0],ylim[1]])
+    figPos.set_title(phon)
+ 
+figure
 #Analysis of performance by Talker without noise
 bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
 isClear = bigP['SoundCond'] == 'Clear'
