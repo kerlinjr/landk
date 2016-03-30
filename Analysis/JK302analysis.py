@@ -59,3 +59,5 @@ wordT = pd.concat([sc.tngram, sc.tphod], axis=1, join_axes=[sc.tngram.index])
 phonT = sc.phonTable
 bigPhonT = pd.concat([landkit.IndexFill(sentT,phonT['SentenceCount'],phonT['PhonemeCount']),landkit.IndexFill(wordT,phonT['WordCount'],phonT['PhonemeCount']),phonT], axis=1, join_axes=[phonT.index])
 bigPhonT.to_csv(dataDir+'\\bigP.csv')
+
+
