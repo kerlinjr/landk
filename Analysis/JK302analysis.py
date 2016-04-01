@@ -43,7 +43,7 @@ lktable = lktable.reset_index()
 
 # Set all non-responses to a single black         
 lktable['SourceSentence'] = lktable['SourceSentence'].fillna(" ")        
-sc = landkit.SentCompare(list(lktable['TargetSentence']),list(lktable['SourceSentence']),True)
+sc = landkit.SentCompare(list(lktable['TargetSentence']),list(lktable['SourceSentence']),True,normjoin('C:\Experiments\JK302'))
 filehandler = open(dataDir + '\\sc.pickle', 'w') 
 pickle.dump(sc, filehandler)
 

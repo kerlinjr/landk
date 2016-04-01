@@ -22,6 +22,12 @@ import inflect
 import json
 import re, collections
 import speech_recognition as sr
+import enchant
+import os
+
+def normjoin(*arg):
+    return os.path.normpath(os.path.join(*arg))
+
 
 def norvigTrain(filename=[]):
     def words(text): return re.findall('[a-z]+', text.lower()) 
@@ -87,7 +93,7 @@ class SentCompare:
     Returns:
         A Pandas tabel of relevent information, if full_execute is true        
     """
-    def __init__(self,target=[],source=[],full_execute=False):
+    def __init__(self,target=[],source=[],full_execute=False, rootFolder = normjoin('C:\\TCDTIMIT')):
         #Turn string inputs to list inputs for success with enumerate loops
         if type(target) == str:
             target = [target]
@@ -96,13 +102,14 @@ class SentCompare:
             
         self.target = target
         self.source = source
-        self.spellfile = r'C:\TCDTIMIT\SubtlexDict.txt'
-        self.spelldict = json.load(open(self.spellfile))
+        self.rootFolder = rootFolder
+        #self.spellfile = r'C:\TCDTIMIT\SubtlexDict.txt'
+        #self.spelldict = json.load(open(self.spellfile))
         self.phondict = nltk.corpus.cmudict.entries()
-        self.tableFolder = r'C:/TCDTIMIT/Tables/'
+        self.tableFolder = normjoin(rootFolder,'Tables')
         if full_execute == True:
             print 'go'
-            self.SpellCorrectNorvig()
+            self.SpellCorrect()
             #self.SpellCorrect()
             self.ScoreWords()
             self.GeneratePhonemes()
@@ -302,7 +309,7 @@ class SentCompare:
            source_phonemes (nested list,tuple): list of phonemes, word position in sentence and word for each source sentence
  
         """
-        missKeyFile = r'C:\TCDTIMIT\missingkeys\missingkeys.csv'
+        missKeyFile = normjoin(self.rootFolder,'missingkeys','missingkeys.csv')
         if dictPath !=' ':
             prondict = {}
             with open(dictPath + dictFileName) as f: #open dictionary
@@ -462,7 +469,7 @@ class SentCompare:
         maxWord = max(self.phonTable['WordCount'])
 
         #Load Irvine Phonotactic Dictionary
-        phod2 = pd.read_csv(self.tableFolder + r'IPhODv2.0_REALS\IphOD2_Words.csv')
+        phod2 = pd.read_csv(normjoin(self.rootFolder , 'IPhODv2_REALS','IphOD2_Words.csv'))
         words = list(phod2['Word'])
         words = [x.lower() for x in words]
         phod2['Word'] = words
@@ -474,15 +481,24 @@ class SentCompare:
         #tphod = phod2.loc[phod2['UnTrn'].isin(['thisinstthere'])] 
         #wordpd = pd.DataFrame(columns = ['WordCount'])
 
-
-        #Load n word frequencies
         
-        ngramf1 =  pd.read_table(self.tableFolder + r'Norvig\count_1w.txt',header=None,names=['Word','WordFreq',])
-        ngramf2 = pd.read_table(self.tableFolder + r'COCAFree\Ngram2.txt',header=None,names=['BigramFreq','Bi0','Bi1'])
-        ngramf3 = pd.read_table(self.tableFolder + r'COCAFree\Ngram3.txt',header=None,names=['TrigramFreq','Tri0','Tri1','Tri2'])
-        min0 = min(ngramf1['WordFreq'])
-        min1 = min(ngramf2['BigramFreq'])
-        min2 = min(ngramf3['TrigramFreq'])
+        #Load n word frequencies
+        rootFolder = self.rootFolder        
+        ngramf1 =  pd.DataFrame.from_dict(json.load(open(normjoin(rootFolder,'Dictionaries','TCDTIMIT', 'DictSubtlexUS.txt'))),'index').reset_index()
+        ngramf1.columns = ['Word','WordFreq']
+        ngramf2 =  pd.DataFrame.from_dict(json.load(open(normjoin(rootFolder,'Dictionaries','TCDTIMIT', 'BiSubtlexUS.txt'))),'index').reset_index()
+        new_col_list = ['Bi0','Bi1']
+        for n,col in enumerate(new_col_list):
+            ngramf2[col] = ngramf2['index'].apply(lambda x: eval(x)[n])
+        ngramf2.columns = ['Tuple','BigramFreq','Bi0','Bi1']    
+        ngramf3 =  pd.DataFrame.from_dict(json.load(open(normjoin(rootFolder,'Dictionaries','TCDTIMIT', 'TriSubtlexUS.txt'))),'index').reset_index()
+        new_col_list = ['Tri0','Tri1','Tri2']
+        for n,col in enumerate(new_col_list):
+            ngramf3[col] = ngramf3['index'].apply(lambda x: eval(x)[n])
+        ngramf3.columns = ['Tuple','TrigramFreq','Tri0','Tri1','Tri2']
+        min0 = 1
+        min1 = 1
+        min2 = 1
         
 #       #Use phonemes for IPhoD lookup
 #        wCnt = 0 
@@ -538,7 +554,7 @@ class SentCompare:
                 if nmatch0.empty:
                     wordvals[w] = np.log(min0) 
                 else:                   
-                    wordvals[w]  = np.log(nmatch0['WordFreq'].values[0])
+                    wordvals[w]  = np.log(nmatch0['WordFreq'].values[0]+1)
             wordsum.extend(wordvals)
 
             #bigram frequency analysis
@@ -550,7 +566,7 @@ class SentCompare:
                 if nmatch1.empty:
                     bivals[biidx+1] = np.log(min1)
                 else:
-                    bivals[biidx+1]  = np.log(nmatch1['BigramFreq'].values[0])
+                    bivals[biidx+1]  = np.log(nmatch1['BigramFreq'].values[0]+1)
             bisum.extend([sum(x) for x in list(nltk.ngrams(bivals,2))])
             # trigram frequency analysis
             trigrams = list(nltk.ngrams(wordList,3))
@@ -562,7 +578,7 @@ class SentCompare:
                 if nmatch2.empty:
                     trivals[triidx+2] = np.log(min2)
                 else:
-                    trivals[triidx+2]  = np.log(nmatch2['TrigramFreq'].values[0])
+                    trivals[triidx+2]  = np.log(nmatch2['TrigramFreq'].values[0]+1)
             trisum.extend([sum(x) for x in list(nltk.ngrams(trivals,3))])
             print 'trial '+str(tnum)
         #Export the summed log-transformed occurences of n-gram occurances for each word     
