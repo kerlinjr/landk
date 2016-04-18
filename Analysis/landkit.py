@@ -499,7 +499,19 @@ class SentCompare:
         min0 = 1
         min1 = 1
         min2 = 1
-        
+
+        #POS tagging through NLTK
+        pennpos =[]
+        upos =[]
+        remapFunc = nltk.tag.mapping
+        for tnum,tsent in enumerate(target):
+            wordList = tsent.split()
+            # Penn Treebank tagging through NLTK
+            pennpos.extend([x[1] for x in nltk.pos_tag(wordList)])
+            print('Sentence ' + str(tnum) + ' POS loading...' )
+
+        #Remap Penn Tag to universal tagging
+        upos = [remapFunc.map_tag('en-ptb', 'universal', x) for x in pennpos]
 #       #Use phonemes for IPhoD lookup
 #        wCnt = 0 
 #        tphod = pd.DataFrame(columns = phod2.columns, index = range(0,maxWord+1))
@@ -536,8 +548,7 @@ class SentCompare:
                 lines = lines.loc[lines['UnTrn'].isin([phodForm])]
                 if len(lines):
                     tphod.iloc[wCnt] =lines.iloc[0]                     
-                wCnt = wCnt+1         
-        
+                wCnt = wCnt+1                 
         
         wCnt = 0 
         wordsum =[] 
@@ -585,7 +596,8 @@ class SentCompare:
         tngram = pd.DataFrame({ '1LogGram' : wordsum,'2LogGram' : bisum,'3LogGram' : trisum} )            
         self.tphod = tphod        
         self.tngram = tngram        
-        
+        self.pennpos = pennpos
+        self.upos = upos 
         
 
     def GeneratePhonemeTable(self):

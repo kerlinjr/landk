@@ -53,7 +53,7 @@ sc.phonTable.to_csv(dataDir+'\\phonTable.csv')
 sentT = pd.DataFrame(lktable)
 
 #Join the ngram and IPHoD info and "correctness"  at the word level
-wordT = pd.concat([sc.tngram, sc.tphod], axis=1, join_axes=[sc.tngram.index])
+wordT = pd.concat([sc.tngram, sc.tphod,pd.DataFrame(sc.pennpos),pd.DataFrame(sc.upos)], axis=1, join_axes=[sc.tngram.index])
 #
 #Table with phoneme Level info
 phonT = sc.phonTable
