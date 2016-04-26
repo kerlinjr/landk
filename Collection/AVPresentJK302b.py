@@ -2,6 +2,8 @@
 #AUDIOVISUAL Sychrony TIMING CURRENTLY NOT PERFECT (+- 15ms, centered near 0)
 #ONLY for behavioural use, not EEG
 
+JK302b uses non-speech noise based on 8-talker babble
+
 PsychoPy movie presentation dependencies:
 
 Movie2 does require:
@@ -79,7 +81,7 @@ myDlg = gui.Dlg(title='AV Experiment')
 myDlg.addField("'Subject: '")
 myDlg.addField("'TalkerNum: '")
 myDlg.addField("'If practice type y here: '")
-myDlg.addField("'If non-babble type y here: '")
+
 
 
 myDlg.show()  # show dialog and wait for OK or Cancel
@@ -134,7 +136,7 @@ else:
         increaseVolume = 20
 
 #Set paths 
-rootPath = normjoin('C:/Experiments/JK302')
+rootPath = normjoin('C:/Experiments/JK302b')
 stimPath = normjoin('C:/TCDTIMIT/volunteersSmall')
 dataOutPath = normjoin(rootPath,'dataOut',subject) 
 if practice:
@@ -178,14 +180,11 @@ if not practice == 1:
     
 
 tmpSoundFile = normjoin(rootPath,'temp.wav')
-if textIn[3] == 'y':
-    babblePath = normjoin(rootPath,'BabbleNoise')
-    babbleList = ['BabbleNoise'+ str(f) for f in table['BabbleFile']]
-    bab1File = normjoin(babblePath,'BabbleNoise1.wav')
-else:
-    babblePath = normjoin(rootPath,'Babble')
-    babbleList = ['babble'+ str(f) for f in table['BabbleFile']]
-    bab1File = normjoin(babblePath,'babble1.wav')
+
+babblePath = normjoin(rootPath,'BabbleNoise')
+babbleList = ['BabbleNoise'+ str(f) for f in table['BabbleFile']]
+bab1File = normjoin(babblePath,'BabbleNoise1.wav')
+
 
 info,bab1 = scipy.io.wavfile.read(bab1File)
 babbleRMS = rms(bab1)
