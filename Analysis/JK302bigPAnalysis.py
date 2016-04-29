@@ -17,9 +17,11 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 
 dfPT = pd.read_excel(os.path.normpath('C:\TCDTIMIT\Tables\Custom\TablesPhoneme.xlsx'),encoding='latin-1')
 #PRP analysis
-bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
+bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP_24_r1.csv'))
+timeTable = pd.DataFrame.from_csv(os.path.normpath(r'C:\TCDTIMIT\Tables\timeTableAudio_r1.csv'))
 #bigP = bigP[bigP['SoundCond'] == 'Babble']
-bigP = bigP[bigP['VideoCond'] == 'AO']
+#bigP = bigP[bigP['VideoCond'] == 'AO']
+    
 bigP['NewIdx']=np.arange(0,len(bigP))
 bigP = bigP.set_index('NewIdx')
 bigP['MaxPhonInSent']=bigP[['SentenceCount','PhonemeIndex']].groupby('SentenceCount').transform(lambda x: max(x))
@@ -51,7 +53,7 @@ for x,phon in enumerate(allPhons):
     for idx in eventIndex:
         PRP += bigP.iloc[idx-prePhon:idx+postPhon+1].loc[:,('PhonemeHitBool')]/float(lenIdx)*100
     PRP = PRP-np.mean(PRP[0:prePhon])
-    if lenIdx > 50:
+    if lenIdx > 200:
         figPos = axtup[np.unravel_index(x,(7,6))]
         figPos.set_ylim(ylim)
         figPos.plot(xAxis,aPRP)
@@ -61,7 +63,7 @@ for x,phon in enumerate(allPhons):
  
 figure
 #Analysis of performance by Talker without noise
-bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
+bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP_24_r1.csv'))
 isClear = bigP['SoundCond'] == 'Clear'
 isNoisy = bigP['SoundCond'] == 'Babble'
 bigP = bigP[isNoisy]

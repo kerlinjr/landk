@@ -443,23 +443,23 @@ class SentCompare:
                 
                 #Label all items not aligned to the target as false
                 hitlist = []
-                x = 0
-                for x in range(0,len(aEncoded)-len(aSeq)+1):
-                    aChunk = aEncoded[x:x+len(aSeq)]
+                y = 0
+                for y in range(0,len(aEncoded)-len(aSeq)+1):
+                    aChunk = aEncoded[y:y+len(aSeq)]
                     #print aChunk
                     if sum(aChunk-aSeq) == 0:
                         break
-                hitlist.extend([False]*(x))    
+                hitlist.extend([False]*(y))    
                 hitlist.extend(list(aSeq-bSeq == 0))
-                hitlist.extend([False]*(len(aEncoded)-x-len(aSeq)))
+                hitlist.extend([False]*(len(aEncoded)-y-len(aSeq)))
                 #Export the target aligned phonemes of the source sequence
                 bPhons = np.zeros(len(aEncoded),int)
-                bPhons[x:x+len(bSeq)] = bSeq   
+                bPhons[y:y+len(bSeq)] = bSeq   
                 bPhonOut = np.array(v.elements())[bPhons].tolist()
             hits.append(hitlist)
             self.source_matched.append(bPhonOut)
             self.hits_phonemes = hits
-            
+
     def SentenceAnalysis(self):
         """Create a table of sentence level analysis
     
@@ -500,18 +500,6 @@ class SentCompare:
         min1 = 1
         min2 = 1
 
-        #POS tagging through NLTK
-        pennpos =[]
-        upos =[]
-        remapFunc = nltk.tag.mapping
-        for tnum,tsent in enumerate(target):
-            wordList = tsent.split()
-            # Penn Treebank tagging through NLTK
-            pennpos.extend([x[1] for x in nltk.pos_tag(wordList)])
-            print('Sentence ' + str(tnum) + ' POS loading...' )
-
-        #Remap Penn Tag to universal tagging
-        upos = [remapFunc.map_tag('en-ptb', 'universal', x) for x in pennpos]
 #       #Use phonemes for IPhoD lookup
 #        wCnt = 0 
 #        tphod = pd.DataFrame(columns = phod2.columns, index = range(0,maxWord+1))
@@ -596,8 +584,6 @@ class SentCompare:
         tngram = pd.DataFrame({ '1LogGram' : wordsum,'2LogGram' : bisum,'3LogGram' : trisum} )            
         self.tphod = tphod        
         self.tngram = tngram        
-        self.pennpos = pennpos
-        self.upos = upos 
         
 
     def GeneratePhonemeTable(self):
