@@ -15,13 +15,19 @@ import os
 from matplotlib.pyplot import *
 from statsmodels.nonparametric.smoothers_lowess import lowess 
 
-dfPT = pd.read_excel(os.path.normpath('C:\TCDTIMIT\Tables\Custom\TablesPhoneme.xlsx'),encoding='latin-1')
+dfPT = pd.read_excel(os.path.normpath('C:\Experiments\JK302\Tables\Custom\TablesPhoneme.xlsx'),encoding='latin-1')
 #PRP analysis
+<<<<<<< HEAD
 bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP_24_r1.csv'))
 timeTable = pd.DataFrame.from_csv(os.path.normpath(r'C:\TCDTIMIT\Tables\timeTableAudio_r1.csv'))
 #bigP = bigP[bigP['SoundCond'] == 'Babble']
 #bigP = bigP[bigP['VideoCond'] == 'AO']
     
+=======
+bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
+bigP = bigP[bigP['SoundCond'] == 'Babble']
+#bigP = bigP[bigP['VideoCond'] == 'AV']
+>>>>>>> origin/master
 bigP['NewIdx']=np.arange(0,len(bigP))
 bigP = bigP.set_index('NewIdx')
 bigP['MaxPhonInSent']=bigP[['SentenceCount','PhonemeIndex']].groupby('SentenceCount').transform(lambda x: max(x))
@@ -34,9 +40,10 @@ isOver =  bigP['PhonemeIndex'] >= prePhon
 isMinAhead =  bigP['DistenceToEndPhon'] >= postPhon
 
 isAll = bigP['TargetPhoneme'].isin(allPhons)
-isCorrect = bigP['PhonemeHitBool'].isin([True,False])
+isCorrect = bigP['PhonemeHitBool'].isin([False,True])
 
 eventIndex = bigP[isAll & isOver & isMinAhead & isCorrect].index
+
 lenIdx = len(eventIndex)
 aPRP = np.zeros(prePhon+postPhon+1)
 for idx in eventIndex:
@@ -44,7 +51,7 @@ for idx in eventIndex:
 aPRP = aPRP-np.mean(aPRP[0:prePhon])    
 #plot(aPRP)
 f, axtup =subplots(7,6,figsize = (20,12),sharex='col',sharey='row')
-ylim = [-20,10]
+ylim = [-10,10]
 for x,phon in enumerate(allPhons):
     isPhon = isAll = bigP['TargetPhoneme'].isin([phon])
     eventIndex = bigP[isPhon & isOver & isMinAhead & isCorrect].index
@@ -56,17 +63,25 @@ for x,phon in enumerate(allPhons):
     if lenIdx > 200:
         figPos = axtup[np.unravel_index(x,(7,6))]
         figPos.set_ylim(ylim)
-        figPos.plot(xAxis,aPRP)
-        figPos.plot(xAxis,PRP)
+        figPos.plot(xAxis,PRP-aPRP)
+        #figPos.plot(xAxis,PRP)
         figPos.plot([0,0],[ylim[0],ylim[1]])
         figPos.set_title(phon)
- 
-figure
+err 
+figure()
 #Analysis of performance by Talker without noise
 bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP_24_r1.csv'))
 isClear = bigP['SoundCond'] == 'Clear'
 isNoisy = bigP['SoundCond'] == 'Babble'
 bigP = bigP[isNoisy]
+
+#Accuracy by word frequency
+bins = np.arange(-1,16,1)
+names = [str(x) for x in bins[1:]]
+bigP['Binned1LogGram'] = pd.cut(bigP['1LogGram'], bins, labels=names)
+bigP[['PhonemeHitBool','Binned1LogGram','VideoCond']].groupby(['Binned1LogGram','VideoCond',]).mean().unstack().plot(kind='line')
+bigP[['PhonemeHitBool','upos','VideoCond']].groupby(['upos','VideoCond',]).mean().unstack().plot(kind='line')
+
 #Grouped by Talker
 groupedTalker = bigP.groupby('Talker')
 talkerMean = groupedTalker.mean()
@@ -98,13 +113,15 @@ countplot = countSorted[0:20].plot(kind='bar',figsize = (12,4))
 #Accuracy of top 20 most common words in english
 meanType = groupedType.mean()
 meanType['TypeCount'] = groupedType['WordHit'].count()
-typeACC = meanType.sort_values('SFreq',ascending = False)['WordHit']
-accbar = typeACC[0:60].plot(kind='bar',figsize = (12,4))
+typeACC = meanType.sort_values('1LogGram',ascending = False)['WordHit']
+accbar = typeACC[0:20].plot(kind='bar',figsize = (12,4))
 accplot = typeACC.plot(kind='line',figsize = (12,4))
-typeACCFilt = typeACC
-filtered = lowess(typeACC.values,np.arange(0,len(typeACC)))
-typeACCFilt[0:] =  filtered[:,1]
-accplot = typeACCFilt.plot(kind='line',figsize = (12,4),color='black')
+
+
+#typeACCFilt = typeACC
+#filtered = lowess(typeACC.values,np.arange(0,len(typeACC)))
+#typeACCFilt[0:] =  filtered[:,1]
+#accplot = typeACCFilt.plot(kind='line',figsize = (12,4),color='black')
 
 ##Remove Talker s59F (practice talker)
 #is59 = bigP['Talker'] == 's59F'
