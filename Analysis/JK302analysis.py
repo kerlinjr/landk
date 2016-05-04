@@ -70,6 +70,12 @@ bigPhonT=bigPhonT.rename(columns = {'TargetPhoneme_x':'TargetPhoneme'})
 subjectTable = pd.DataFrame.from_csv(normjoin(dataDir,'SubjectInfoJK302.csv')).reset_index()
 bigPhonT = pd.merge(bigPhonT,subjectTable,how='left',on=['Subject'])
 
+POSTable = pd.DataFrame.from_csv(normjoin(tablePath,'posTags_r1.csv')).reset_index()
+POSTable=POSTable.rename(columns = {'Subject':'Talker'})
+POSTable=POSTable.rename(columns = {'File':'SentenceID'})
+POSTable['WordIdx'] = POSTable[['Talker','SentenceID','index']].groupby(['Talker','SentenceID']).transform(lambda x: x-min(x))
+bigPhonT = pd.merge(bigPhonT,POSTable[['Talker','SentenceID','WordIdx','PENNPOS','UPOS']],how='left',on=['Talker','SentenceID','WordIdx'])
+
 bigPhonT.to_csv(dataDir+'\\bigP.csv')
 
 
