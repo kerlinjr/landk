@@ -537,7 +537,7 @@ class SentCompare:
                 if len(lines):
                     tphod.iloc[wCnt] =lines.iloc[0]                     
                 wCnt = wCnt+1                 
-        
+            print ('Loading Iphod for sentence ' +str(tnum))
         wCnt = 0 
         wordsum =[] 
         bisum = []   
@@ -579,7 +579,7 @@ class SentCompare:
                 else:
                     trivals[triidx+2]  = np.log(nmatch2['TrigramFreq'].values[0]+1)
             trisum.extend([sum(x) for x in list(nltk.ngrams(trivals,3))])
-            print 'trial '+str(tnum)
+            print 'Ngram loading trial '+str(tnum)
         #Export the summed log-transformed occurences of n-gram occurances for each word     
         tngram = pd.DataFrame({ '1LogGram' : wordsum,'2LogGram' : bisum,'3LogGram' : trisum} )            
         self.tphod = tphod        

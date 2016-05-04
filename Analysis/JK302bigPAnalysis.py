@@ -15,19 +15,20 @@ import os
 from matplotlib.pyplot import *
 from statsmodels.nonparametric.smoothers_lowess import lowess 
 
+
+    
+
+
 dfPT = pd.read_excel(os.path.normpath('C:\Experiments\JK302\Tables\Custom\TablesPhoneme.xlsx'),encoding='latin-1')
 #PRP analysis
-<<<<<<< HEAD
 bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP_24_r1.csv'))
 timeTable = pd.DataFrame.from_csv(os.path.normpath(r'C:\TCDTIMIT\Tables\timeTableAudio_r1.csv'))
 #bigP = bigP[bigP['SoundCond'] == 'Babble']
 #bigP = bigP[bigP['VideoCond'] == 'AO']
     
-=======
 bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
 bigP = bigP[bigP['SoundCond'] == 'Babble']
 #bigP = bigP[bigP['VideoCond'] == 'AV']
->>>>>>> origin/master
 bigP['NewIdx']=np.arange(0,len(bigP))
 bigP = bigP.set_index('NewIdx')
 bigP['MaxPhonInSent']=bigP[['SentenceCount','PhonemeIndex']].groupby('SentenceCount').transform(lambda x: max(x))

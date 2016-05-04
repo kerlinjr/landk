@@ -38,9 +38,10 @@ ttPath = normjoin(r'C:\TCDTIMIT\Tables\timeTable_r1.csv')
 
 
 timeTable = pd.DataFrame.from_csv(ttPath)
+timeTable['Talker'] = ['s'+str(x) for x in timeTable['Talker']]
 audioTable = pd.DataFrame(index = [],columns =timeTable.columns)
 audioTable['SpeechRMS'] = []
-audioTable['FileCount'] = []
+audioTable['FileID'] = []
 subjectNames = []
 fileNames = []
 volume =[]
@@ -49,13 +50,13 @@ regex = re.compile("[^a-zA-Z0-9 '-]")
 volume =[]
 folders = os.listdir(talkerPath)
 fCount = 0
-fileCount = []
+FileID = []
 volGrouped=[]
 for folder in folders:    
     path = os.path.join(talkerPath,folder,'straightcam')
     files = [p for p in os.listdir(path) if fnmatch.fnmatch(p,'*.wav')]
     for fname in files:
-        tt = timeTable[(timeTable['Talker']== folder[1:]) & (timeTable['SentenceID']== fname[:-4])].reset_index()
+        tt = timeTable[(timeTable['Talker']== folder) & (timeTable['SentenceID']== fname[:-4])].reset_index()
 #        tt = tt[tt['Phoneme'] != 'sil']
         tmp,wav = scipy.io.wavfile.read(normjoin(path,fname))
         wav = wav.astype('float32')
@@ -72,7 +73,7 @@ for folder in folders:
         print(folder + ' ' + fname + ' Volume Tagging...' )
         #volGrouped.append(volSent)
  
-        tt['FileCount'] = fCount
+        tt['FileID'] = fCount
         tt['SpeechRMS'] = volume
         audioTable = pd.concat([audioTable,tt])
         fCount += 1 
@@ -133,36 +134,40 @@ onsetVal = []
 phonVal = []
 talkerVal = []
 sentIDVal = []
-fileCountVal = []
+FileIDVal = []
 targetVal = []
+phonemeIndex =[]
 for x,tlist in enumerate(sc.target_phonemes):
-    sourceList = tt.loc[tt['FileCount'] == x,'Phoneme']
+    sourceList = tt.loc[tt['FileID'] == x,'Phoneme']
     sourceList = [y.upper() for y in sourceList] 
     targetList,tmp1,tmp2 = zip(*tlist)
     targetList = [str(z) for z in targetList] 
-    sourceVal = list(tt.loc[tt['FileCount'] == x,('SpeechRMS')])   
-    rmsVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='Neg1'))    
+    sourceVal = list(tt.loc[tt['FileID'] == x,('SpeechRMS')])   
+    rmsVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='take1back'))    
     
-    sourceVal = list(tt.loc[tt['FileCount'] == x,('Onset')])
+    sourceVal = list(tt.loc[tt['FileID'] == x,('Onset')])
     onsetVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='take1back'))
-    sourceVal = list(tt.loc[tt['FileCount'] == x,('Offset')])
+    sourceVal = list(tt.loc[tt['FileID'] == x,('Offset')])
     offsetVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='take1back'))
-    sourceVal = list(tt.loc[tt['FileCount'] == x,('Phoneme')])
+    sourceVal = list(tt.loc[tt['FileID'] == x,('Phoneme')])
     phonVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='blankline'))
-    sourceVal = list(tt.loc[tt['FileCount'] == x,('Talker')])
+    sourceVal = list(tt.loc[tt['FileID'] == x,('Talker')])
     talkerVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='take1back'))
-    sourceVal = list(tt.loc[tt['FileCount'] == x,('SentenceID')])
+    sourceVal = list(tt.loc[tt['FileID'] == x,('SentenceID')])
     sentIDVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='take1back'))
-    sourceVal = list(tt.loc[tt['FileCount'] == x,('FileCount')])
-    fileCountVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='take1back'))
+    sourceVal = list(tt.loc[tt['FileID'] == x,('FileID')])
+    FileIDVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='take1back'))
     targetVal.extend(targetList)
+    phonemeIndex.extend(np.arange(0,len(targetList)))
     if np.mod(x,100) == 0:
         print('Sentence '+str(x)+' Loading...')
 onsetValPnts = [np.round(x/float(10000000)*48000).astype('int') for x in onsetVal]   
 offsetValPnts = [np.round(x/float(10000000)*48000).astype('int') for x in offsetVal]       
-audioTableTM = pd.DataFrame(np.transpose([fileCountVal,talkerVal,sentIDVal,onsetValPnts,offsetValPnts,rmsVal,phonVal,targetVal]),columns =['FileCount','Talker','SentenceID','OnsetSample','OffsetSample','SpeechRMS','HTKPhoneme','TargetPhoneme'])       
+audioTableTM = pd.DataFrame(np.transpose([FileIDVal,talkerVal,sentIDVal,onsetValPnts,offsetValPnts,rmsVal,phonVal,targetVal,phonemeIndex]),columns =['FileID','Talker','SentenceID','OnsetSample','OffsetSample','SpeechRMS','HTKPhoneme','TargetPhoneme','PhonemeIndex'])       
 audioTableTM.to_csv(normjoin(outPath,'audioTableTM.csv'))
 
-
-        
-        
+#audioTableTM.rename(columns={'FileCount':'FileID'}, inplace=True)
+#audioTableTM['Talker'] = ['s'+str(x) for x in audioTableTM['Talker']]
+#atm = audioTableTM.groupby(['Talker','SentenceID']).first().reset_index()
+#bigP= pd.merge(bigP,atm, how='left', on=['Talker','SentenceID'])
+           

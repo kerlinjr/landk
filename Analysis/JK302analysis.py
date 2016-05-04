@@ -28,6 +28,7 @@ def normjoin(*arg):
 #sc.SpellCorrect()
 #sc.ScoreWords()
 dataDir = normjoin('C:\Experiments\JK302\dataOut')
+tablePath = normjoin(r'C:\TCDTIMIT\Tables')
 folders = os.walk(dataDir).next()[1]
 csvNames =[]
 wavNames = []
@@ -44,8 +45,8 @@ lktable = lktable.reset_index()
 # Set all non-responses to a single black         
 lktable['SourceSentence'] = lktable['SourceSentence'].fillna(" ")        
 sc = landkit.SentCompare(list(lktable['TargetSentence']),list(lktable['SourceSentence']),True,normjoin('C:\Experiments\JK302'))
-filehandler = open(dataDir + '\\sc.pickle', 'w') 
-pickle.dump(sc, filehandler)
+#filehandler = open(dataDir + '\\sc.pickle', 'w') 
+#pickle.dump(sc, filehandler)
 
 sc.phonTable.to_csv(dataDir+'\\phonTable.csv')
 
@@ -53,11 +54,22 @@ sc.phonTable.to_csv(dataDir+'\\phonTable.csv')
 sentT = pd.DataFrame(lktable)
 
 #Join the ngram and IPHoD info and "correctness"  at the word level
-wordT = pd.concat([sc.tngram, sc.tphod,pd.DataFrame(sc.pennpos),pd.DataFrame(sc.upos)], axis=1, join_axes=[sc.tngram.index])
+wordT = pd.concat([sc.tngram, sc.tphod], axis=1, join_axes=[sc.tngram.index])
 #
 #Table with phoneme Level info
 phonT = sc.phonTable
 bigPhonT = pd.concat([landkit.IndexFill(sentT,phonT['SentenceCount'],phonT['PhonemeCount']),landkit.IndexFill(wordT,phonT['WordCount'],phonT['PhonemeCount']),phonT], axis=1, join_axes=[phonT.index])
+
+audioTableTM = pd.DataFrame.from_csv(normjoin(tablePath,'audioTableTM.csv'))
+audioTableTM['PhonemeIndex']= [int(x) for x in audioTableTM['PhonemeIndex']]
+#atm = audioTableTM.groupby(['Talker','SentenceID']).first().reset_index()
+bigPhonT = pd.merge(bigPhonT,audioTableTM, how='left', on=['Talker','SentenceID','PhonemeIndex'])
+del bigPhonT['TargetPhoneme_y']
+bigPhonT=bigPhonT.rename(columns = {'TargetPhoneme_x':'TargetPhoneme'})
+
+subjectTable = pd.DataFrame.from_csv(normjoin(dataDir,'SubjectInfoJK302.csv')).reset_index()
+bigPhonT = pd.merge(bigPhonT,subjectTable,how='left',on=['Subject'])
+
 bigPhonT.to_csv(dataDir+'\\bigP.csv')
 
 
