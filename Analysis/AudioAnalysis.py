@@ -86,7 +86,7 @@ justSent = taggedCorpus.groupby(['Subject','File']).first().reset_index()
 sc = landkit.SentCompare(list(justSent['Sentence']),list(justSent['Sentence']),False,normjoin('C:\Experiments\JK302'))
 sc.GeneratePhonemes()
 
-
+audioTable = pd.DataFrame.from_csv(os.path.normpath(r'C:\TCDTIMIT\Tables\audioTable_r1.csv'))
 
 def source2target(sourceList,targetList,sourceVal,fillOpt='Neg1'):
     import difflib
@@ -136,12 +136,15 @@ talkerVal = []
 sentIDVal = []
 FileIDVal = []
 targetVal = []
+wordVal = []
+wordIdxVal = []
 phonemeIndex =[]
 for x,tlist in enumerate(sc.target_phonemes):
     sourceList = tt.loc[tt['FileID'] == x,'Phoneme']
     sourceList = [y.upper() for y in sourceList] 
-    targetList,tmp1,tmp2 = zip(*tlist)
+    targetList,wordIdxList,wordList = zip(*tlist)
     targetList = [str(z) for z in targetList] 
+    wordList = [str(z) for z in wordList] 
     sourceVal = list(tt.loc[tt['FileID'] == x,('SpeechRMS')])   
     rmsVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='take1back'))    
     
@@ -158,12 +161,14 @@ for x,tlist in enumerate(sc.target_phonemes):
     sourceVal = list(tt.loc[tt['FileID'] == x,('FileID')])
     FileIDVal.extend(source2target(sourceList,targetList,sourceVal,fillOpt='take1back'))
     targetVal.extend(targetList)
+    wordVal.extend(wordList)
+    wordIdxVal.extend(wordIdxList)
     phonemeIndex.extend(np.arange(0,len(targetList)))
     if np.mod(x,100) == 0:
         print('Sentence '+str(x)+' Loading...')
 onsetValPnts = [np.round(x/float(10000000)*48000).astype('int') for x in onsetVal]   
 offsetValPnts = [np.round(x/float(10000000)*48000).astype('int') for x in offsetVal]       
-audioTableTM = pd.DataFrame(np.transpose([FileIDVal,talkerVal,sentIDVal,onsetValPnts,offsetValPnts,rmsVal,phonVal,targetVal,phonemeIndex]),columns =['FileID','Talker','SentenceID','OnsetSample','OffsetSample','SpeechRMS','HTKPhoneme','TargetPhoneme','PhonemeIndex'])       
+audioTableTM = pd.DataFrame(np.transpose([FileIDVal,talkerVal,sentIDVal,onsetValPnts,offsetValPnts,rmsVal,phonVal,targetVal,phonemeIndex,wordVal,wordIdxVal]),columns =['FileID','Talker','SentenceID','OnsetSample','OffsetSample','SpeechRMS','HTKPhoneme','TargetPhoneme','PhonemeIndex','Word','WordIndex'])       
 audioTableTM.to_csv(normjoin(outPath,'audioTableTM.csv'))
 
 #audioTableTM.rename(columns={'FileCount':'FileID'}, inplace=True)
