@@ -262,12 +262,18 @@ for trial in np.arange(numTrials):
         speechRange = np.round(speechRange)
         
         #Phonemic Restoration code
-        numWords = tt['WordIndex'].max()
+        numWords = tt['WordIndex'].max()+1
         from random import randint
-        wordIdx = randint(1,numWords-1)
+        if numWords > 2:
+            wordIdx = randint(1,numWords-2)
+            wordKeep = range(wordIdx-1,wordIdx+2)
+        else:
+            wordIdx = 0
+            wordKeep = [0,1]
+            
         table['WordIdxList'][trial] = wordIdx
-        wordKeep = range(wordIdx-1,wordIdx+2)
-        #wordsToLose = list(set(range(0,numWords+1)) - set([wordIdx]))
+
+        #wordsToLose = list(set(range(0,numWords)) - set([wordIdx]))
         shRange = tt[tt['WordIndex'].isin(wordKeep)]
         
         txtFile = normjoin(talkerPath, fname + '.txt')

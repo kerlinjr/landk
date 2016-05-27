@@ -268,7 +268,11 @@ for trial in np.arange(numTrials):
         table['WordIdxList'][trial] = wordIdx
         #wordKeep = range(wordIdx-1,wordIdx+2)
         #wordsToLose = list(set(range(0,numWords+1)) - set([wordIdx]))
-        shRange = tt[tt['WordIndex'].isin([wordIdx])]
+        #shRange = tt[tt['WordIndex'].isin([wordIdx])]
+        import random
+        randPhons = random.sample(range(0,len(tt)),int(round(len(tt)/float(3))))
+        #shRange = tt[tt['TargetPhoneme'].isin(['EY','P','W','B','F','V','DH','M','EH','AO','OY'])]
+        shRange = tt[tt['PhonemeIndex'].isin(randPhons)]
         
         txtFile = normjoin(talkerPath, fname + '.txt')
         words = pd.read_csv(txtFile,sep = ' ',header = None,names = ['tmp0','tmp1','Words'])['Words']
@@ -281,10 +285,11 @@ for trial in np.arange(numTrials):
         speech = speech[int(timeCorrection*48000):]
         
         #Phonemic Restoration code
-        phonsToRemove = np.min([len(shRange),3])
+        phonsToRemove = np.min([len(shRange),100])
         if ~shRange.empty:
-            for x in np.arange(0,phonsToRemove-1):
-                speech[int(shRange['OnsetSample'].iloc[x]):int(shRange['OffsetSample'].iloc[x])] = 0
+            for x in np.arange(0,phonsToRemove):
+                replaceLoc = range(int(shRange['OnsetSample'].iloc[x]),int(shRange['OffsetSample'].iloc[x]))
+                speech[replaceLoc] = 0
 
         babble = babble[range(0,len(speech))].astype('float32')
         babbleRMS = rms(babble[range(int(speechRange[0]),int(speechRange[1]))])
@@ -331,12 +336,12 @@ for trial in np.arange(numTrials):
         soundDur = audioSound.getDuration()
     
     #Announce the sentence
-    sentenceText = fullSentence
-    text = visual.TextStim(win, sentenceText, pos=(0, 0), units = 'pix')
-    text.draw()
-    win.flip()
-    core.wait(1)
-    k = event.waitKeys()
+   # sentenceText = fullSentence
+   # text = visual.TextStim(win, sentenceText, pos=(0, 0), units = 'pix')
+   # text.draw()
+   # win.flip()
+   # core.wait(1)
+   # k = event.waitKeys()
 
     keystext = "PRESS 'escape' to Quit.\n"
     text = visual.TextStim(win, keystext, pos=(0, -250), units = 'pix')
@@ -383,10 +388,10 @@ for trial in np.arange(numTrials):
 #        k = event.waitKeys()
 #        mic.stop() 
 #        core.wait(0.1)
-        sentenceText = fullSentence
-        text = visual.TextStim(win, sentenceText, pos=(0, 200), units = 'pix')
-        text.draw()
-        win.flip()
+     #   sentenceText = fullSentence
+     #   text = visual.TextStim(win, sentenceText, pos=(0, 200), units = 'pix')
+     #   text.draw()
+     #   win.flip()
 
         
         #Start transcription sequence
