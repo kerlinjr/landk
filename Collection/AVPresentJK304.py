@@ -270,6 +270,7 @@ for trial in np.arange(numTrials):
         #wordsToLose = list(set(range(0,numWords+1)) - set([wordIdx]))
         #shRange = tt[tt['WordIndex'].isin([wordIdx])]
         import random
+        
         randPhons = random.sample(range(0,len(tt)),int(round(len(tt)/float(3))))
         #shRange = tt[tt['TargetPhoneme'].isin(['EY','P','W','B','F','V','DH','M','EH','AO','OY'])]
         shRange = tt[tt['PhonemeIndex'].isin(randPhons)]
@@ -282,7 +283,7 @@ for trial in np.arange(numTrials):
         info,speech = scipy.io.wavfile.read(speechFile)
         info,babble = scipy.io.wavfile.read(babbleFile)
         speech = speech.astype('float32')
-        speech = speech[int(timeCorrection*48000):]
+        
         
         #Phonemic Restoration code
         phonsToRemove = np.min([len(shRange),100])
@@ -290,7 +291,8 @@ for trial in np.arange(numTrials):
             for x in np.arange(0,phonsToRemove):
                 replaceLoc = range(int(shRange['OnsetSample'].iloc[x]),int(shRange['OffsetSample'].iloc[x]))
                 speech[replaceLoc] = 0
-
+                
+        speech = speech[int(timeCorrection*48000):]
         babble = babble[range(0,len(speech))].astype('float32')
         babbleRMS = rms(babble[range(int(speechRange[0]),int(speechRange[1]))])
         adjustedBabble = babble*db2amp(-dBSNR)

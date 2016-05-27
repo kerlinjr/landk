@@ -284,7 +284,7 @@ for trial in np.arange(numTrials):
         info,speech = scipy.io.wavfile.read(speechFile)
         info,babble = scipy.io.wavfile.read(babbleFile)
         speech = speech.astype('float32')
-        speech = speech[int(timeCorrection*48000):]
+        
         
         speechTmp = speech
         speech = speech*0
@@ -292,6 +292,8 @@ for trial in np.arange(numTrials):
         if ~shRange.empty:
             for x in np.arange(0,len(shRange)):
                 speech[int(shRange['OnsetSample'].iloc[x]):int(shRange['OffsetSample'].iloc[x])] = speechTmp[int(shRange['OnsetSample'].iloc[x]):int(shRange['OffsetSample'].iloc[x])]
+        
+        speech = speech[int(timeCorrection*48000):]        
 
         babble = babble[range(0,len(speech))].astype('float32')
         babbleRMS = rms(babble[range(int(speechRange[0]),int(speechRange[1]))])
