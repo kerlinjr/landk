@@ -290,7 +290,8 @@ for trial in np.arange(numTrials):
         if ~shRange.empty:
             for x in np.arange(0,phonsToRemove):
                 replaceLoc = range(int(shRange['OnsetSample'].iloc[x]),int(shRange['OffsetSample'].iloc[x]))
-                speech[replaceLoc] = 0
+                replaceSound = np.random.rand(1,len(replaceLoc))[0]*600
+                speech[replaceLoc] = replaceSound
                 
         speech = speech[int(timeCorrection*48000):]
         babble = babble[range(0,len(speech))].astype('float32')
