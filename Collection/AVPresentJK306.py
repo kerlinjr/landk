@@ -1,6 +1,7 @@
-"""Audio visual presentation of TCD-TIMIT isolated words in noise 
-#AUDIOVISUAL Sychrony TIMING CURRENTLY NOT PERFECT (+- 15ms, centered near 0)
-#ONLY for behavioural use, not EEG
+"""Audio visual presentation of TCD-TIMIT sentences in noise EEG experiment
+#Audio jitter ~+-3 ms 
+#Video jitter ~+- 30 ms
+
 
 PsychoPy movie presentation dependencies:
 
@@ -26,21 +27,23 @@ imageio will download further compiled libs (ffmpeg) as needed
 from __future__ import division
 
 from psychopy import prefs
-#pyo.pa_get_input_devices()
-#prefs.general['audioLib'] = ['pygame']
-#prefs.general['audioDriver'] = ['SPDIF (RME HDSP 9652)'] #kills none spdif microphone
-
+import pyo
+pyo.pa_get_input_devices()
+prefs.general['audioLib'] = ['pyo']
+prefs.general['audioDriver'] = ['MOTU Audio ASIO']
 
 from psychopy import visual, sound, core, event, microphone, gui
 from psychopy import logging, prefs
-''' Doesnt work yet
+
+
 from psychopy import parallel
-parallel.PParallelInpOut32
-parallel.setPortAddress(0x03F8)
-parallel.setData(255)
-core.wait(.5)
-parallel.setData(0)
-'''
+import time
+port = parallel.ParallelPort(address=0xEFF8)
+
+#Initiate the PsychPy window
+win = visual.Window([1920, 1080])
+sound.init(48000,buffer=512)
+
 
 #logging.console.setLevel(logging.DEBUG)#get messages about the sound lib as it loads
 
@@ -107,7 +110,7 @@ if test:
     initialSNR = 999
     monitorSpeed = 60
     startTimeStr = str(time.time())[:-3]
-    timeCorrection = 0.070
+    timeCorrection = 0.0
     talker = 's60T'
     talkerNum = '99'
     increaseVolume = 20
@@ -118,7 +121,7 @@ else:
         initialSNR = 999
         monitorSpeed = 60
         startTimeStr = str(time.time())[:-3]
-        timeCorrection = 0.070
+        timeCorrection = 0.0
         talker = 's01M'
         talkerNum = '99'
         increaseVolume = 20
@@ -128,35 +131,33 @@ else:
         initialSNR = 0
         monitorSpeed = 60
         startTimeStr = str(time.time())[:-3]
-        timeCorrection = 0.070
+        timeCorrection = 0.0
         talkerNum = textIn[1]
         increaseVolume = 20
 
 #Set paths 
-rootPath = normjoin('C:/Experiments/JK303')
+rootPath = normjoin('C:/Experiments/JK302')
 stimPath = normjoin('C:/TCDTIMIT/volunteersSmall')
 dataOutPath = normjoin(rootPath,'dataOut',subject) 
 if practice:
-    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK303Practice_r1.csv'))
+    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK302Practice_r1.csv'))
 elif test:
-    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK303Test_r1.csv'))
+    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK302Test_r1.csv'))
 else:
-    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK303_r1.csv'))
+    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK302_r1.csv'))
 table = table[table['Subject']== int(subject)]
 table = table[table['SubjectTalkerNum']== int(talkerNum)]
-table['WordIdxList'] = table['WordIdxList'] = [-1]*len(table)
 table = table.reset_index()
 table['SourceSentence'] = ' '
 table['TargetSentence'] = ' '
-table['FullSentence'] = ' '
 table['dBSNR'] = -999
 print table
 talker = table['Talker'].iloc[0]
 
-timeTable = pd.read_csv(normjoin(rootPath,'audioTableTM.csv'))
+timeTable = pd.read_csv(normjoin(rootPath,'timeTable_r1.csv'))
 
-timeTable['OnsetSample'] =  np.round(timeTable['OnsetSample'])
-timeTable['OffsetSample'] = np.round(timeTable['OffsetSample'])
+timeTable['Onset'] =  np.round(timeTable['Onset']/float(10000000)*48000)
+timeTable['Offset'] = np.round(timeTable['Offset']/float(10000000)*48000)
 
 
 talkerPath = normjoin(stimPath, talker,'straightcam')
@@ -189,9 +190,7 @@ babbleRMS = rms(bab1)
 microphone.switchOn(sampleRate=16000)
 mic = microphone.AdvAudioCapture(name='mic', saveDir=dataOutPath, stereo=False)
 
-#Initiate the PsychPy window
-win = visual.Window([1920, 1080])
-#sound.init(48000,buffer=500)
+
 
 if not test:
     #Present an example of the talker without noise. No response taken.
@@ -222,7 +221,7 @@ if not test:
     core.wait(exampleSentence.getDuration())
 
 #Present an example of the talker without noise. No response taken.
-keystext = "Please listen to and watch the talker of each sentence. Be ready to type the three words you heard. If you you are not sure about what you heard, guess. Please attempt to report as much of what you heard as possible. \n \n Press the spacebar to continue."
+keystext = "Please listen to and watch the talker of each sentence. Be ready to type the sentence you hear. If you you are not sure about what you heard, guess. Please attempt to report as much of the sentence you heard as possible. \n \n Press the spacebar to continue."
 text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
 text.draw()
 win.flip()
@@ -231,7 +230,7 @@ k = event.waitKeys()
 
 
 dBSNRBabble = initialSNR
-wordIdxList = []
+
 #Start trial loop
 for trial in np.arange(numTrials):
 
@@ -257,43 +256,25 @@ for trial in np.arange(numTrials):
     #load in text
     if not test:
         #   Find the range of speech
-        tt = timeTable[(timeTable['Talker']== talker[0:]) & (timeTable['SentenceID']== fname)].reset_index()
-        speechRange = tt['OnsetSample'].iloc[[1,-1]].values # FInd the range of all speech
+        tt = timeTable[(timeTable['Talker']== talker[1:]) & (timeTable['SentenceID']== fname)].reset_index()
+        speechRange = tt['Onset'].iloc[[1,-1]].values # FInd the range of all speech
         speechRange = np.round(speechRange)
         
         #Phonemic Restoration code
-        numWords = tt['WordIndex'].max()+1
-        from random import randint
-        if numWords > 2:
-            wordIdx = randint(1,numWords-2)
-            wordKeep = range(wordIdx-1,wordIdx+2)
-        else:
-            wordIdx = 0
-            wordKeep = [0,1]
-            
-        table['WordIdxList'][trial] = wordIdx
-
-        #wordsToLose = list(set(range(0,numWords)) - set([wordIdx]))
-        shRange = tt[tt['WordIndex'].isin(wordKeep)]
-        
+    #    shRange = tt[tt['Phoneme'] == 't']
         txtFile = normjoin(talkerPath, fname + '.txt')
         words = pd.read_csv(txtFile,sep = ' ',header = None,names = ['tmp0','tmp1','Words'])['Words']
-        targetSentence = ' '.join(words[wordKeep])
-        fullSentence = ' '.join(words)
+        targetSentence = ' '.join(words)
         #Load in speech and babble
         info,speech = scipy.io.wavfile.read(speechFile)
         info,babble = scipy.io.wavfile.read(babbleFile)
         speech = speech.astype('float32')
+        speech = speech[int(timeCorrection*48000):]
         
-        
-        speechTmp = speech
-        speech = speech*0
         #Phonemic Restoration code
-        if ~shRange.empty:
-            for x in np.arange(0,len(shRange)):
-                speech[int(shRange['OnsetSample'].iloc[x]):int(shRange['OffsetSample'].iloc[x])] = speechTmp[int(shRange['OnsetSample'].iloc[x]):int(shRange['OffsetSample'].iloc[x])]
-        
-        speech = speech[int(timeCorrection*48000):]        
+#        if ~shRange.empty:
+#            for x in np.arange(0,len(shRange)):
+#                speech[int(shRange['Onset'].iloc[x]):int(shRange['Offset'].iloc[x])] = 0
 
         babble = babble[range(0,len(speech))].astype('float32')
         babbleRMS = rms(babble[range(int(speechRange[0]),int(speechRange[1]))])
@@ -341,32 +322,59 @@ for trial in np.arange(numTrials):
     
     keystext = "PRESS 'escape' to Quit.\n"
     text = visual.TextStim(win, keystext, pos=(0, -250), units = 'pix')
-    
-    
-    #Only draw more than 1 frame if this is a video "OFF" trial    
-    firstFrame = 1
-    
-    movStart = core.getTime()
-    while core.getTime()-movStart < soundDur+ .1: #mov.status != visual.FINISHED:
-        if firstFrame ==1:
-            mov.draw()
-            text.draw()     
-            win.flip()
+
+    globalClock = core.Clock()
+
+
+    soundStart = 0
+    trig2 = 1
+    cnt = 1;
+    #roundStart = globalClock.getTime()
+    #win.flip()
+    #mov.seek(.008)
+    mov.draw()
+    mov.seek(.008)
+
+    portTime = 0
+#    while mov.getCurrentFrameTime() <= 0:
+#        time.sleep(0.001)
+    while mov.status != visual.FINISHED:
+        win.flip()
+        roundStart = globalClock.getTime()
+        port.setData(0)
+        if mov.getCurrentFrameTime() > .02 and soundStart == 0:
+            portTime = globalClock.getTime()
             audioSound.play()
-            movStart  = core.getTime()
-            firstFrame = 0
-        else:
-            if vidSwitch[trial] == 'AV' or test:
-                mov.draw()
-                text.draw()     
-                win.flip()
-        # Check for action keys.....
-        for key in event.getKeys():
-            if key in ['escape']:
-                win.close()
-                core.quit()
-        time.sleep(0.005)
+            #time.sleep(0.008)
+            port.setData(255) #sets all pins high
+            soundStart = 1
+            #print portTime -globalClock.getTime()
+
+            
+            
+            #
+        if cnt > 1:    
+            if globalClock.getTime()-portTime > 1-(1/float(60)) and globalClock.getTime()-portTime < 1+(1/float(60)):
+                #time.sleep(0.008)
+                port.setData(255)
+            elif globalClock.getTime()-portTime > 3-(1/float(60)) and globalClock.getTime()-portTime < 3+(1/float(60)):
+                #time.sleep(0.008)
+                port.setData(255)
+
         
+        #time.sleep(0.003) #To get off the edge of a frame
+
+        print mov.getCurrentFrameTime()
+
+        if event.getKeys(keyList=['escape','q']):
+            win.close()
+            core.quit()  
+            
+        mov.draw()    
+        while globalClock.getTime() - roundStart < 0.022:
+            time.sleep(0.003)
+        cnt +=1
+    core.wait(1)
     if not test:
 # No microphone procedure in this version        
 #        #Start microphone sequence
@@ -408,7 +416,6 @@ for trial in np.arange(numTrials):
 
         table['SourceSentence'][trial] = sourceSentence
         table['TargetSentence'][trial] = targetSentence
-        table['FullSentence'][trial] = fullSentence 
 #        No adaptation in this version
 #        #Just the spell correction and word -level scoring
 #        sc = landkit.SentCompare([targetSentence],[sourceSentence],False)
