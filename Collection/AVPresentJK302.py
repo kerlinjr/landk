@@ -88,7 +88,7 @@ if myDlg.OK:  # then the user pressed OK
 else:
     print('user cancelled')    
 
-movStimVersion = 3
+movStimVersion = 2
 
 test = 0
 if textIn[2] == 'y':

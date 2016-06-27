@@ -1,0 +1,125 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 08 10:46:59 2016
+
+@author: jrkerlin
+
+Gets the all the TIMIT sentences
+
+"""
+import os
+import fnmatch
+import re
+import pandas as pd
+import numpy as np
+from collections import defaultdict 
+
+talkerLabel = []
+sentenceType = []
+fullpath  = []
+fileName = []
+gender = []
+numWords =[]
+cnt = 0
+talkerPath = r'C:\TCDTIMIT\volunteersSmall'
+regex = re.compile("[^a-zA-Z0-9 '-]")
+folders = os.listdir(talkerPath)[:-1] # Don't include the test subject
+for talker in folders:    
+    path = os.path.join(talkerPath,talker,'straightcam')
+    files = [p for p in os.listdir(path) if fnmatch.fnmatch(p,'*.avi')]
+    for fname in files:
+        f = open(os.path.join(path,fname[:-4]+'.txt'))
+        wordCnt = 0
+        for line in f:
+            wordCnt+=1
+        talkerLabel.append(talker)
+        sentenceType.append(fname[0:2])
+        fileName.append(fname[:-4])
+        gender.append(talker[3])
+        numWords.append(wordCnt)
+      
+df = pd.DataFrame(np.transpose([talkerLabel, sentenceType, fileName, gender, numWords]), columns =['Talker','SentenceType','SentenceID','Gender','NumWords'])
+talkerExclude = ['s06M','s22M','s27M','s42M','s21M',] # Under 80% clear performance, > 2 std performance for an individual, timing test 
+
+df = df[~df['Talker'].isin(talkerExclude)]
+df = df[df['NumWords'].astype(int) <= 10]
+df = df[df['NumWords'].astype(int) >= 4]
+df = df[df['SentenceType'].isin(['sx','si'])]
+
+desiredTrialsPerTalker = 20
+d = defaultdict(int)
+attempt = 0
+
+while sum(pd.DataFrame.from_dict(d,orient ='index').values) != desiredTrialsPerTalker*54:
+    bannedTalkers =[]
+    dfTmp = df
+    d = defaultdict(int)
+    trlIdx = []
+    sentids = np.unique(dfTmp['SentenceID'].values)
+    np.random.shuffle(sentids)
+    for sentid in sentids:
+        boolSent = dfTmp['SentenceID'].isin([sentid]) & ~dfTmp['Talker'].isin(bannedTalkers)
+        tab = np.array(dfTmp.loc[boolSent].index)
+        if tab.size > 0:
+            trlIdx.append(np.random.choice(tab,1)[0]) #Select random qualifying trial
+            talk= [dfTmp.loc[trlIdx[-1]].Talker][0]
+            d[talk]+=1
+            if d[talk] == desiredTrialsPerTalker:
+                bannedTalkers.append(talk)# Remove talkers with desiredTrialsPerTalker from consideration          
+    attempt+=1
+    print attempt
+    
+dfPick = df[df.index.isin(trlIdx)]
+dfPick = dfPick.sort_values('Talker')
+
+avDesign = [0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,3,3,3,3,3]
+counterBalBlock = np.kron([0,1,2,3], np.ones(len(dfPick)))
+avOrder1 = []
+for talker in np.unique(dfPick['Talker']):
+    avOrder1.extend(np.random.choice(avDesign,desiredTrialsPerTalker,replace = False))
+avOrder1 = np.array(avOrder1)     
+avOrder2 = np.mod(avOrder1+1,4)
+avOrder3 = np.mod(avOrder1+2,4)
+avOrder4 = np.mod(avOrder1+3,4)
+avOrder = np.hstack([avOrder1,avOrder2,avOrder3,avOrder4])
+    
+soundLabels = ['Clear','Clear','Babble','Babble']   
+videoLabels = ['AV','AO','AV','AO']
+dfPickFull = pd.concat([dfPick,dfPick,dfPick,dfPick])   
+dfPickFull['AVOrder'] = avOrder
+dfPickFull['SoundCond'] = [soundLabels[x] for x in avOrder]
+dfPickFull['VideoCond'] = [videoLabels[x] for x in avOrder]
+dfPickFull['CounterBalBlock'] = counterBalBlock
+
+#Randomize the talker order and trial order for each condition counterbalanced set
+totalTrlOrder =[]
+trlOrder = []
+babbleOrder= []
+randTalkerOrder = np.arange(0,len(np.unique(dfPick['Talker'])))
+blockTrlOrder = np.arange(0,desiredTrialsPerTalker)
+bOrder = np.arange(0,desiredTrialsPerTalker)
+for y in np.arange(0,4):
+    np.random.shuffle(randTalkerOrder)
+    for x in randTalkerOrder:
+        np.random.shuffle(blockTrlOrder)
+        np.random.shuffle(bOrder)
+        trlOrder.extend(blockTrlOrder+1)
+        babbleOrder.extend(bOrder+1)
+        totalTrlOrder.extend(blockTrlOrder+x*desiredTrialsPerTalker+y*len(dfPick)+1)
+dfPickFull['TrialOrder'] = trlOrder
+dfPickFull['BabbleFile'] = babbleOrder
+dfPickFull['TotalTrialOrder'] = totalTrlOrder
+dfPickFull = dfPickFull.set_index('TotalTrialOrder').sort_index()
+#Put all the subjects in order 
+numSubs = 8
+subNum=[]
+subTalkerNum =[]
+subBlockNum =[]
+for x in np.arange(1,numSubs+1):
+    subNum.extend(np.ones(len(dfPickFull)/numSubs)*(x))
+    subTalkerNum.extend(np.kron(np.arange(1,28),np.ones(desiredTrialsPerTalker)))
+    subBlockNum.extend(np.kron(np.arange(1,10),np.ones(desiredTrialsPerTalker*3)))
+dfPickFull['Subject'] = subNum
+dfPickFull['SubjectTalkerNum'] = subTalkerNum
+dfPickFull['SubjectBlockNum'] = subBlockNum
+dfPickFull.to_csv('C:\Experiments\JK306\StudyDesignJK306.csv')
