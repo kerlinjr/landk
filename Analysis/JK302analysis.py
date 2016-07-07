@@ -28,7 +28,7 @@ def normjoin(*arg):
 #sc.SpellCorrect()
 #sc.ScoreWords()
 dataDir = normjoin('C:\Experiments\JK302\dataOut')
-tablePath = normjoin(r'C:\TCDTIMIT\Tables')
+tablePath = normjoin(r'C:\Experiments\JK302')
 folders = os.walk(dataDir).next()[1]
 csvNames =[]
 wavNames = []
@@ -73,6 +73,8 @@ bigPhonT = pd.merge(bigPhonT,subjectTable,how='left',on=['Subject'])
 POSTable = pd.DataFrame.from_csv(normjoin(tablePath,'posTags_r1.csv')).reset_index()
 POSTable=POSTable.rename(columns = {'Subject':'Talker'})
 POSTable=POSTable.rename(columns = {'File':'SentenceID'})
+POSTable['Talker'] = POSTable['Talker'].apply(lambda x: 's' +x)
+POSTable['SentenceID'] = POSTable['SentenceID'].apply(lambda x: x.lower())
 POSTable['WordIdx'] = POSTable[['Talker','SentenceID','index']].groupby(['Talker','SentenceID']).transform(lambda x: x-min(x))
 bigPhonT = pd.merge(bigPhonT,POSTable[['Talker','SentenceID','WordIdx','PENNPOS','UPOS']],how='left',on=['Talker','SentenceID','WordIdx'])
 
