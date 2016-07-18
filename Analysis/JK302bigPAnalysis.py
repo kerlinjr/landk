@@ -22,11 +22,11 @@ from statsmodels.nonparametric.smoothers_lowess import lowess
 dfPT = pd.read_excel(os.path.normpath('C:\Experiments\JK302\Tables\Custom\TablesPhoneme.xlsx'),encoding='latin-1')
 #PRP analysis
 bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP_24_r1.csv'))
-timeTable = pd.DataFrame.from_csv(os.path.normpath(r'C:\TCDTIMIT\Tables\timeTableAudio_r1.csv'))
+timeTable = pd.DataFrame.from_csv(os.path.normpath(r'C:\TCDTIMIT\Tables\audioTableTM.csv'))
 #bigP = bigP[bigP['SoundCond'] == 'Babble']
 #bigP = bigP[bigP['VideoCond'] == 'AO']
     
-bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
+#bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
 bigP = bigP[bigP['SoundCond'] == 'Babble']
 #bigP = bigP[bigP['VideoCond'] == 'AV']
 bigP['NewIdx']=np.arange(0,len(bigP))
@@ -40,7 +40,7 @@ xAxis = np.arange(-prePhon,postPhon+1)
 isOver =  bigP['PhonemeIndex'] >= prePhon
 isMinAhead =  bigP['DistenceToEndPhon'] >= postPhon
 
-isAll = bigP['TargetPhoneme'].isin(allPhons)
+isAll = bigP['TargetPhoneme_x'].isin(allPhons)
 isCorrect = bigP['PhonemeHitBool'].isin([False,True])
 
 eventIndex = bigP[isAll & isOver & isMinAhead & isCorrect].index
@@ -54,7 +54,7 @@ aPRP = aPRP-np.mean(aPRP[0:prePhon])
 f, axtup =subplots(7,6,figsize = (20,12),sharex='col',sharey='row')
 ylim = [-10,10]
 for x,phon in enumerate(allPhons):
-    isPhon = isAll = bigP['TargetPhoneme'].isin([phon])
+    isPhon = isAll = bigP['TargetPhoneme_x'].isin([phon])
     eventIndex = bigP[isPhon & isOver & isMinAhead & isCorrect].index
     lenIdx = len(eventIndex)
     PRP = np.zeros(prePhon+postPhon+1)
