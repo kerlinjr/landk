@@ -122,4 +122,4 @@ for x in np.arange(1,numSubs+1):
 dfPickFull['Subject'] = subNum
 dfPickFull['SubjectTalkerNum'] = subTalkerNum
 dfPickFull['SubjectBlockNum'] = subBlockNum
-dfPickFull.to_csv('C:\Experiments\JK306\StudyDesignJK306.csv')
+dfPickFull.to_csv('C:\Experiments\JK309\StudyDesignJK309.csv')
