@@ -66,7 +66,9 @@ def normjoin(*arg):
 def rms(array):
     return sqrt(mean(square(array)))
 def db2amp(scalar):
-    return math.pow(10,scalar/20)    
+    return np.power(10,scalar/20)   
+def amp2db(scalar):
+    return np.log10(scalar)*20    
     
 
 
@@ -194,19 +196,35 @@ for trial in np.arange(numTrials):
 
     #   Find the range of speech
     tt = timeTable[(timeTable['Talker']== talker) & (timeTable['SentenceID']== fname)].reset_index()
-    speechRange = tt['OnsetSample'].iloc[[1,-1]].values # FInd the range of all speech
-    speechRange = np.round(speechRange)
+    speechRange = np.round(np.array([tt['OnsetSample'].iloc[[0]].values[0], tt['OffsetSample'].iloc[[-1]].values[0]]))
+    numWords = tt['WordIndex'].max()+1
+    import random
+    shRange = tt
 
-    #Phonemic Restoration code
-    #    shRange = tt[tt['Phoneme'] == 't']
     txtFile = normjoin(talkerPath, fname + '.txt')
     words = pd.read_csv(txtFile,sep = ' ',header = None,names = ['tmp0','tmp1','Words'])['Words']
+    #targetSentence = ' '.join(words[wordKeep])
+    fullSentence = ' '.join(words)
     targetSentence = ' '.join(words)
     #Load in speech and babble
     info,speech = scipy.io.wavfile.read(speechFile)
     info,babble = scipy.io.wavfile.read(babbleFile)
     speech = speech.astype('float32')
-
+    polyC = np.polyfit((shRange['OnsetSample']+shRange['OffsetSample'])/2,amp2db(shRange['SpeechRMS']),1)
+    x = np.arange(0,len(speech))
+    spPoly = np.polyval(polyC,x)
+    spNorm = spPoly-mean(spPoly);
+    spAdjust = db2amp(-spNorm);
+    speech[range(int(speechRange[0]),int(speechRange[1]))] = speech[range(int(speechRange[0]),int(speechRange[1]))]*spAdjust[range(int(speechRange[0]),int(speechRange[1]))];
+    babLen = len(speech)#+int(gapTime*48000)
+    babble = babble[range(0,babLen)].astype('float32')
+    babbleRMS = rms(babble)
+    adjustedBabble = babble*db2amp(-dBSNR)
+    matchSpeech = babbleRMS/rms(speech[range(int(speechRange[0]),int(speechRange[1]))])*speech
+    speechTmp = matchSpeech
+    babbleTmp = adjustedBabble
+    matchSpeech = matchSpeech*0
+    adjustedBabble = adjustedBabble*0
 
     #Phonemic Restoration code
     #        if ~shRange.empty:

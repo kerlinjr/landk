@@ -28,7 +28,7 @@ timeTable = pd.DataFrame.from_csv(os.path.normpath(r'C:\TCDTIMIT\Tables\audioTab
     
 #bigP = pd.DataFrame.from_csv(os.path.normpath(r'C:\Experiments\JK302\dataOut\bigP.csv'))
 bigP = bigP[bigP['SoundCond'] == 'Babble']
-#bigP = bigP[bigP['VideoCond'] == 'AV']
+#bigP = bigP[bigP['VideoCond'] == 'AO']
 bigP['NewIdx']=np.arange(0,len(bigP))
 bigP = bigP.set_index('NewIdx')
 bigP['MaxPhonInSent']=bigP[['SentenceCount','PhonemeIndex']].groupby('SentenceCount').transform(lambda x: max(x))
