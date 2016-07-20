@@ -70,8 +70,10 @@ while sum(pd.DataFrame.from_dict(d,orient ='index').values) != desiredTrialsPerT
     print attempt
     
 dfPick = df[df.index.isin(trlIdx)]
-dfPick = dfPick.sort_values('Talker')
 
+
+dfPick = dfPick.sort('Talker')
+print dfPick
 avDesign = [0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,3,3,3,3,3]
 counterBalBlock = np.kron([0,1,2,3], np.ones(len(dfPick)))
 avOrder1 = []
