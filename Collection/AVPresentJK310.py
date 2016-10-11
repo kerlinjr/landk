@@ -118,7 +118,7 @@ if test:
     increaseVolume = 20
 else:
     if practice:
-        numTrials = 2
+        numTrials = 8
         subject = '99'
         initialSNR = 999
         monitorSpeed = 60
@@ -147,16 +147,17 @@ elif test:
     table = pd.read_csv(normjoin(rootPath,'StudyDesignJK310Test_r1.csv'))
 else:
     table = pd.read_csv(normjoin(rootPath,'StudyDesignJK310_r1.csv'))    
+    table = table[table['Subject']== int(subject)]
+    table = table[table['SubjectTalkerNum']== int(talkerNum)]
 
-corpusList = pd.DataFrame.from_csv("C:\TCDTIMIT\Dictionaries\TCDTIMIT\Dict.txt").transpose()
+corpusList = pd.DataFrame.from_csv("C:\Experiments\JK310\Dictionaries\TCDTIMIT\Dict.txt").transpose()
 corpusTrim = []
 for x in corpusList.index:
     pattern = '[a-z]'
     corpusTrim.append(''.join(re.findall(pattern, str(x))))
 
 
-table = table[table['Subject']== int(subject)]
-table = table[table['SubjectTalkerNum']== int(talkerNum)]
+
 
 
 
@@ -254,7 +255,7 @@ if not test:
     core.wait(exampleSentence.getDuration())
 
 #Present an example of the talker without noise. No response taken.
-keystext = "Please listen to and watch the talker of each sentence. Be ready to type the sentence you hear. If you you are not sure about what you heard, guess. Please attempt to report as much of the sentence you heard as possible. \n \n Press the spacebar to continue."
+keystext = "Press 1 if you hear the target word. Press 2 if you do not hear the target word. Press spacebar to continue "
 text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
 text.draw()
 win.flip()
