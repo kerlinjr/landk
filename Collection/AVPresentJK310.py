@@ -142,11 +142,11 @@ rootPath = normjoin('C:/Experiments/JK310')
 stimPath = normjoin('C:/TCDTIMIT/volunteersSmall')
 dataOutPath = normjoin(rootPath,'dataOut',subject) 
 if practice:
-    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK310Practice_r1.csv'))
+    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK310Practice_r2.csv'))
 elif test:
     table = pd.read_csv(normjoin(rootPath,'StudyDesignJK310Test_r1.csv'))
 else:
-    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK310_r1.csv'))    
+    table = pd.read_csv(normjoin(rootPath,'StudyDesignJK310_r2.csv'))    
     table = table[table['Subject']== int(subject)]
     table = table[table['SubjectTalkerNum']== int(talkerNum)]
 
@@ -423,13 +423,19 @@ for trial in np.arange(numTrials):
 # No microphone procedure in this version        
 #        #Start microphone sequence
 #        instruct = visual.TextStim(win, "Please say what you heard. Press spacebar when you are finished:", pos=(0, 0), units = 'pix
-#
+#        text = visual.TextStim(win, keystext, pos=(0, 0), units = 'pix')
+        text = visual.TextStim(win,'+', pos=(0, 0), units = 'pix')
+        text.draw()
+        win.flip()
 #
 #        mic.record(sec=10, block=False)
 #        core.wait(0.3)
 #        k = event.waitKeys()
 #        mic.stop() 
 #        core.wait(0.1)
+        if table['ProbeDelay'][trial] == 'Delay':
+            core.wait(4)
+            
         
         #Collect probe response and delare target for After condition
         if table['ProbeBeforeAfter'][trial] == 'After':

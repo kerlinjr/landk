@@ -76,16 +76,16 @@ while sum(pd.DataFrame.from_dict(d,orient ='index').values) != desiredTrialsPerT
 dfPick = df[df.index.isin(trlIdx)]
 dfPick = dfPick.sort_values('Talker')
 
-avDesign = [0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,3,3,3,3,3]
-counterBalBlock = np.kron([0,1,2,3], np.ones(len(dfPick)))
-avOrder1 = []
-for talker in np.unique(dfPick['Talker']):
-    avOrder1.extend(np.random.choice(avDesign,desiredTrialsPerTalker,replace = False))
-avOrder1 = np.array(avOrder1)     
-avOrder2 = np.mod(avOrder1+1,4)
-avOrder3 = np.mod(avOrder1+2,4)
-avOrder4 = np.mod(avOrder1+3,4)
-avOrder = np.hstack([avOrder1,avOrder2,avOrder3,avOrder4])
+design = [0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,3,3,3,3,3]
+numreps = 4
+repetition = np.kron(np.arange(0,4), np.ones(len(dfPick)))
+avOrder = []
+
+for rep in np.arange(0,4):
+    for talker in np.unique(dfPick['Talker']):
+        avOrder.extend(np.random.choice(design,desiredTrialsPerTalker,replace = False))
+
+#avOrder = np.hstack([avOrder1,avOrder2,avOrder3,avOrder4])
     
 soundLabels = ['Babble','Babble','Babble','Babble']
 videoLabels = ['AO','AO','AO','AO']
@@ -97,7 +97,7 @@ dfPickFull['AVOrder'] = avOrder
 dfPickFull['SoundCond'] = [soundLabels[x] for x in avOrder]
 dfPickFull['VideoCond'] = [videoLabels[x] for x in avOrder]
 dfPickFull['TargetCond'] = [targetLabels[x] for x in avOrder]
-dfPickFull['CounterBalBlock'] = counterBalBlock
+dfPickFull['Repetition'] = repetition
 
 #Randomize the talker order and trial order for each condition counterbalanced set
 totalTrlOrder =[]
@@ -119,17 +119,23 @@ dfPickFull['BabbleFile'] = babbleOrder
 dfPickFull['TotalTrialOrder'] = totalTrlOrder
 dfPickFull = dfPickFull.set_index('TotalTrialOrder').sort_index()
 #Put all the subjects in order 
-numSubs = 24
+numSubs = 12
 subNum=[]
 subTalkerNum =[]
 probeBeforeAfter = []
+probeDelay = []
 for x in np.arange(1,numSubs+1):
     subNum.extend(np.ones(len(dfPickFull)/numSubs)*(x))
-    subTalkerNum.extend(np.kron(np.arange(1,10),np.ones(desiredTrialsPerTalker)))
+    subTalkerNum.extend(np.kron(np.arange(1,19),np.ones(desiredTrialsPerTalker)))
     if x % 2 == 1:
-        probeBeforeAfter.extend(np.kron(np.array([1, 2, 1, 2, 1, 2, 1, 2, 1]),np.ones(desiredTrialsPerTalker)))
+        probeDelay.extend(np.kron(np.array([1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2]),np.ones(desiredTrialsPerTalker)))
     else:
-        probeBeforeAfter.extend(np.kron(np.array([2, 1, 2, 1, 2, 1, 2, 1, 2]),np.ones(desiredTrialsPerTalker)))
+        probeDelay.extend(np.kron(np.array([2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1]),np.ones(desiredTrialsPerTalker)))
+#    if x in [7,8,9,10,11,12]:
+#        probeBeforeAfter.extend(np.kron(np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),np.ones(desiredTrialsPerTalker)))
+#    else:
+    probeBeforeAfter.extend(np.kron(np.array([2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]),np.ones(desiredTrialsPerTalker)))
+            
 probePosition = []        
 for x in np.arange(1,len(dfPickFull)+1):
     if dfPickFull['TargetCond'][x] == 'Present':
@@ -142,7 +148,8 @@ dfPickFull['SubjectTalkerNum'] = subTalkerNum
 dfPickFull['ProbePosition'] = probePosition
 dfPickFull['ProbeBeforeAfter'] = probeBeforeAfter
 dfPickFull['ProbeBeforeAfter'] = dfPickFull['ProbeBeforeAfter'].apply(lambda x: 'Before' if x == 1 else 'After')
-
+dfPickFull['ProbeDelay'] = probeDelay
+dfPickFull['ProbeDelay'] = dfPickFull['ProbeDelay'].apply(lambda x: 'Delay' if x == 1 else 'No Delay')
 
 
 dfPickFull.to_csv('C:\Experiments\JK310\StudyDesignJK310.csv')
