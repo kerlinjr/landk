@@ -187,11 +187,11 @@ for subj in np.arange(1,numSubs+1):
     elif np.mod(subj-1,4) in([2, 3]):    
         dfSubOrder['AttendGender'] = np.concatenate([['M']*(numTrialsPerGender),['F']*(numTrialsPerGender)],axis = 0)
 
-    #Split Gender Location
-    if np.mod(subj,2) in([1]):
-        dfSubOrder['GenderLeft'] = ['F']*(numTrialsPerGender*2)
-    elif np.mod(subj,2) in([0]):    
-        dfSubOrder['GenderLeft'] = ['M']*(numTrialsPerGender*2)
+#    #Split Gender Location
+#    if np.mod(subj,2) in([1]):
+#        dfSubOrder['GenderLeft'] = ['F']*(numTrialsPerGender*2)
+#    elif np.mod(subj,2) in([0]):    
+#        dfSubOrder['GenderLeft'] = ['M']*(numTrialsPerGender*2)
     
     responsesPerGender = (numTrialsPerGender*1/float(8)/2) #Require response for 1 of 8 trials
     nonrespPerGender = numTrialsPerGender/2-responsesPerGender
@@ -223,9 +223,9 @@ for subj in np.arange(1,numSubs+1):
     dfSubOrder = pd.merge(dfSubOrder,dfCond,on='CondKey',how='left')
     dfSubOrder.to_csv('C:\Experiments\SentFill\SubDesigns\SubOrder' + str(subj) +'.csv')
 
-dfSubOrder.groupby(['AttendGender', 'GenderLeft' , 'CondKey', 'NoiseCond','VideoCond']).count()
-dfSubOrder.groupby(['AttendGender', 'GenderLeft' , 'RespKey', 'NoiseCond','VideoCond']).count()
-dfSubOrder.groupby(['AttendGender', 'GenderLeft' , 'RespKey','CondKey', 'NoiseCond','VideoCond']).mean()
+dfSubOrder.groupby(['AttendGender' , 'CondKey', 'NoiseCond','VideoCond']).count()
+dfSubOrder.groupby(['AttendGender' , 'RespKey', 'NoiseCond','VideoCond']).count()
+dfSubOrder.groupby(['AttendGender' , 'RespKey','CondKey', 'NoiseCond','VideoCond']).mean()
 
 dfSortMeanPN = dfFsort.groupby(['PhonToNoise']).mean()
 dfSortMeanPN['PhonToNoiseTime'] = (dfSortMeanPN['OffSampleNoise']-dfSortMeanPN['OnSampleNoise'])/float(48000)
