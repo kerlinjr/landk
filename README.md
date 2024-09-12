@@ -15,3 +15,6 @@ The repository will be structured as:
   * [Statistics and Visualization] 
 
  The first project of LandKit is to determine the relative contribution of vision on auditory speech understanding at the levels of lexical and phonemic perception. One key input to the model are transcriptions from human participants watching videos of speech. Transcription success and error inform the model. Analysis and visualization identifies the key elements of the speech success and the interactions between visual information and successful speech retreival.       
+
+ You can see a summary analysis here:
+https://github.com/kerlinjr/landk/blob/master/Analysis/AVSummaryAnalysis.ipynb
